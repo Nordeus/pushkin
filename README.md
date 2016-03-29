@@ -22,7 +22,7 @@ To fit all use cases, Pushkin has 2 modes of operations:
 
 These two use cases can be seen on the diagram below:
 
-![highlevel](docs/img/Pushkin_Highlevel.png)
+![highlevel](docs/sources/img/Pushkin_Highlevel.png)
 
 ---
 
