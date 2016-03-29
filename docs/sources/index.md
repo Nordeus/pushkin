@@ -32,7 +32,7 @@ These two use cases can be seen on the diagram below:
 
 ### Step 0 - Requirements
 
-In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL** installed and setup. Also you will need *Postgres* **hstore** extension in *pushkin* database.
+In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL 9.2+** installed and setup. Also you will need *Postgres* **hstore** extension in *pushkin* database.
 
 ---
 
@@ -41,9 +41,7 @@ In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL** 
 There are 2 ways to install Pushkin:
 
 **Using pip:**
-```bash
-pip install pushkin
-```
+Coming soon...
 
 **From source:**
 
@@ -66,11 +64,12 @@ Pushkin is then ready to use.
 
 ---
 
-### Step 2 - Before starting Pushkin
+### Step 2 - Setup database
 
 Before starting Pushkin you should run the tests to make sure everything works
 fine. Requirements before running tests is to make database `pushkin` which is
-owned by user `pushkin` which have password `pushkin` (defined in `tests/test_config.ini`) and to load *SQL* schema.
+owned by user `pushkin` which has a password `pushkin` (defined in `tests/test_config.ini`) and to load *SQL* schema.
+You will also need to install the `hstore` extension.
 
 ```bash
 psql -U postgres -c "CREATE USER pushkin WITH PASSWORD 'pushkin'"
@@ -81,20 +80,20 @@ psql -U postgres -d pushkin -c "CREATE EXTENSION HSTORE"
 You can initiate the testing by executing: 
 
 ```bash
-git clone https://github.com/Nordeus/pushkin.git
-cd pushkin
 python setup.py test
 ```
 
 If tests pass, Pushkin is installed correctly.
 
-Before you start sending notifications, you will need GCM and APN certificates.
+### Step 3 - Setup certificates
 
-Obtaining GCM key can be done via 
-[page](https://developers.google.com/api-client-library/php/guide/aaa_apikeys#acquiring-an-api-key).   
+Before you start sending notifications, you will need Google Cloud Messaging (GCM) and Apple Push Notification Service (APN) certificates.
+
+Obtaining a GCM key can be done by following the documentation on 
+[developers.google.com](https://developers.google.com/api-client-library/php/guide/aaa_apikeys#acquiring-an-api-key).   
 Once acquired, store the key in Pushkin configuration: `config.ini`.   
-You can find `config.ini` in Pushkin root dir, and the field you must find is named `gcm_access_key` under **Messenger** tab.   
-Under the same tab there is `apns_certificate_path` field where you must provide the path to your APN certificate. If you already have an APN certificate, you can skip the next part.
+You can find `config.ini` in Pushkin root dir, and the field you must find is named `gcm_access_key` under **Messenger** section.   
+Under the same section there is `apns_certificate_path` field where you must provide the path to your APN certificate. If you already have an APN certificate, you can skip the next part.
 
 **Obtaining APN certificate**
 
@@ -171,9 +170,9 @@ We also presume that you have implemented GCM client side. For instructions you 
 
 ---
 
-### Step 3 - Starting Pushkin
+### Step 4 - Starting Pushkin
 
-If you are starting Pushkin for the first time you should initialize database which you created in *Step 2* with following command:
+If you are starting Pushkin for the first time you should initialize the database which you created in *Step 2* with the following command:
 ```bash
 pushkin --configuration config.ini --init-db
 ```
