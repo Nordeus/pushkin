@@ -4,7 +4,7 @@ Our vision, mission, objectives and design principles serve as the framework for
 
 The requirements of our users are the driving force behind all our development efforts. Pushkin features fulfill real needs of leading IT organizations running production environments. This requires us to be agile and flexible in order to quickly adapt to our user needs and the market challenges. So the roadmap needs to be flexible enough to deal with and take advantage of rapid changes in the industry. This is the reason why we only publish our short-term roadmap, which is the description of the features planned for the next release of the software.
 
-We will be also happy to discuss any ideas for next releases on the [Pushkin-Dev Google group](https://groups.google.com/a/nordeus.eu/forum/#!forum/pushkin.dev).
+We will be also happy to discuss any ideas for next releases on the [Pushkin-Dev Google group](https://groups.google.com/forum/#!forum/pushkin-dev).
 
 
 # Planned features for Pushkin 0.2

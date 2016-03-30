@@ -3,7 +3,7 @@
 
 ## Introduction
 
-Pushkin is a free open source tool for sending push notifications. It was developed with a focus on speed and enabling fast experimentation.
+Pushkin is a **free open source tool** for sending push notifications. It was developed with a focus on speed and enabling fast experimentation.
 Pushkin was mainly built for supporting online mobile games, but can easily be extended to any type of application. It supports both Android and iOS platforms.
 
 Pushkin is designed to be a responsive tool. You can design your systems around Pushkin so it reacts to your game server, database server, client or really any service that can send a HTTP POST request. It is also easily scalable, because you can run as many Pushkin instances as you want. One instance is capable of pushing 500 messages per second.
@@ -22,7 +22,7 @@ To fit all use cases, Pushkin has 2 modes of operations:
 
 These two use cases can be seen on the diagram below:
 
-![highlevel](docs/sources/img/Pushkin_Highlevel.png)
+![highlevel](docs/img/Pushkin_Highlevel.png)
 
 ---
 
