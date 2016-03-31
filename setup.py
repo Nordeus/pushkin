@@ -12,12 +12,12 @@ any type of application. It supports both Android and iOS platforms.
 
 setup(
     name='pushkin',
-    version='0.1.0',
+    version='0.1.1',
 
     description='Pushkin is a free open source tool for sending push notifications',
     long_description=long_description,
 
-    url='https://github.com/pushkin/pushkin.git',
+    url='https://github.com/Nordeus/pushkin.git',
 
     author='Nordeus LLC',
     author_email='pushkin.dev@nordeus.com',
@@ -34,15 +34,17 @@ setup(
     # What does your project relate to?
     keywords='development push notifications mobile',
 
-    packages=find_packages(exclude=['docs', 'tests']),
+    packages=find_packages(exclude=['docs']),
 
     setup_requires=['pytest-runner'],
-    tests_require=[
+    install_requires=[
+        # Only used for tests
         'pytest>=2.8.5',
         'pytest-mock>=0.9.0',
+        'funcsigs>=0.4.0',
+        'mock>=1.3.0',
         'pytest-tornado>=0.4.4',
-        ],
-    install_requires=[
+
         'tornado>=4.2.1',
         'configparser>=3.3.0',
         'protobuf>=2.6.1',
@@ -52,7 +54,7 @@ setup(
         'sqlalchemy>=1.0.12'
         ],
     package_data = {
-        '': ['*.sql', '*.sh']
+        '': ['*.sql', '*.sh', '*.ini']
     },
 
     entry_points={

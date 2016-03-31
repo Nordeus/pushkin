@@ -17,8 +17,9 @@ from pushkin import context
 
 from pushkin import config
 from pushkin.database import database
+from pushkin import test_config_ini_path
 
-context.setup_configuration('tests/test_config.ini')
+context.setup_configuration(test_config_ini_path)
 database.init_db()
 
 @pytest.fixture

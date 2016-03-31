@@ -13,7 +13,8 @@ from pushkin.database import database
 import datetime
 from pushkin import context
 
-context.setup_configuration('tests/test_config.ini')
+from pushkin import test_config_ini_path
+context.setup_configuration(test_config_ini_path)
 
 @pytest.fixture
 def setup_database():

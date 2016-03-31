@@ -6,6 +6,7 @@ from pushkin.database import database
 from pushkin.request.request_processor import RequestProcessor
 from pushkin.requesthandlers.events import JsonEventHandler
 from pushkin.requesthandlers.notifications import JsonNotificationHandler
+from pushkin import test_config_ini_path
 
 
 @pytest.fixture
@@ -22,7 +23,7 @@ def mock_processor(mocker):
 
 @pytest.fixture
 def app():
-    pushkin_cli.CONFIGURATION_FILENAME = 'tests/test_config.ini'
+    pushkin_cli.CONFIGURATION_FILENAME = test_config_ini_path
     pushkin_cli.init()
     return pushkin_cli.create_app()
 
