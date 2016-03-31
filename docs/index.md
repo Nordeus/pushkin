@@ -41,7 +41,10 @@ In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL 9.
 There are 2 ways to install Pushkin:
 
 **Using pip:**
-Coming soon...
+
+```bash
+pip install pushkin
+```
 
 **From source:**
 
@@ -80,7 +83,7 @@ psql -U postgres -d pushkin -c "CREATE EXTENSION HSTORE"
 You can initiate the testing by executing: 
 
 ```bash
-python setup.py test
+python2.7 -c 'import pushkin; pushkin.run_tests()'
 ```
 
 If tests pass, Pushkin is installed correctly.
