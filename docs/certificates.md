@@ -5,8 +5,8 @@ Before you start sending notifications, you will need Google Cloud Messaging (GC
 
 Obtaining a GCM key can be done by following the documentation on 
 [developers.google.com](https://developers.google.com/api-client-library/php/guide/aaa_apikeys#acquiring-an-api-key).   
-Once acquired, store the key in Pushkin configuration: `config.ini`.   
-You can find `config.ini` in Pushkin root dir, and the field you must find is named `gcm_access_key` under **Messenger** section.   
+Once acquired, store the key in the Pushkin configuration: `config.ini`.   
+You can find `config.ini` in the Pushkin root dir, and the field you must find is named `gcm_access_key` under **Messenger** section.   
 Under the same section there is `apns_certificate_path` field where you must provide the path to your APN certificate. If you already have an APN certificate, you can skip the next part.
 
 **Obtaining APN certificate**
@@ -34,7 +34,7 @@ Under the same section there is `apns_certificate_path` field where you must pro
 	* Sandbox Push Certificate (Also known as Development) - For sending push notifications to a development version of your app that was built with an Apple Development provisioning profile.
 	* Production Push Certificate - For production builds that are submitted to the app store built with an Apple "App Store" provisioning profile, or for testing push notifications in an Ad-Hoc build built with an Apple "Ad Hoc" provisioning profile.
 	
-	Basically, you will want to start with a Sandbox (Development) Push Certificate when developing or updating your app. Then before submitting your app built it with an "Ad Hoc" Provisioning Profile and Production Push Certificate and make sure it receives push notifications. Finally, when submitting your app continue using the production push certificate.
+	Basically, you will want to start with a Sandbox (Development) Push Certificate when developing or updating your app. Then before submitting your app build it with an "Ad Hoc" Provisioning Profile and Production Push Certificate and make sure it receives push notifications. Finally, when submitting your app continue using the production push certificate.
 <br/>
 <br/>
 	![Create Certificate](img/4.png)
