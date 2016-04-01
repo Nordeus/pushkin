@@ -26,4 +26,4 @@ These two use cases can be seen on the diagram below:
 
 ---
 
-Read the documentation at [pushkin.io](http://pushkin.io/documentation/).
+Read the documentation at [pushkin.io](http://docs.pushkin.io).
