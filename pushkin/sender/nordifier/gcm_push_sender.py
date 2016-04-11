@@ -27,9 +27,13 @@ class GCMPushSender(Sender):
         self.base_deeplink_url = config.get('Messenger', 'base_deeplink_url')
         self.gcm = GCM(self.access_key)
         self.canonical_ids = []
+        self.unregistered_devices = []
 
     def get_canonical_ids(self):
         return self.canonical_ids
+
+    def get_unregistered_devices(self):
+        return self.unregistered_devices
 
     def send(self, notification):
         expiry_seconds = (notification['time_to_live_ts_bigint'] - int(round(time.time() * 1000))) / 1000
@@ -40,7 +44,7 @@ class GCMPushSender(Sender):
             notification['status'] = const.NOTIFICATION_EXPIRED
             return
 
-        utm_source = 'pushnordification'
+        utm_source = 'pushnotification'
         utm_campaign = str(notification['campaign_id'])
         utm_medium = str(notification['message_id'])
         data = {
@@ -75,6 +79,11 @@ class GCMPushSender(Sender):
 
                                 if error == 'NotRegistered':
                                     notification['status'] = const.NOTIFICATION_GCM_DEVICE_UNREGISTERED
+                                    unregistered_data = {
+                                        'login_id': notification['login_id'],
+                                        'device_token': notification['receiver_id'],
+                                    }
+                                    self.unregistered_devices.append(unregistered_data)
 
                         if notification['status'] == const.NOTIFICATION_GCM_FATAL_ERROR:
                             self.log.debug(

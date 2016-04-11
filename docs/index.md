@@ -226,7 +226,7 @@ Pushkin has two entities for working with user data - **login** and **device**. 
 
 * `application_version` - version of your application installed on a device
 
-* `unregistered_ts` - for future use
+* `unregistered_ts` - timestamp when device stopped receiving notifications
 
 * `login` - login entity
 

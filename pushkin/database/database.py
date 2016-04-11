@@ -87,7 +87,7 @@ def get_device_tokens(login_id):
     session = get_session()
     return session.query(model.Device.platform_id,
                   func.coalesce(model.Device.device_token_new, model.Device.device_token).label('device_token')).\
-        filter(model.Device.login_id == login_id)
+        filter(model.Device.login_id == login_id).filter(model.Device.unregistered_ts.is_(None))
 
 
 def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, message_id=0):
@@ -124,8 +124,6 @@ def update_canonicals(canonicals):
     '''
     global ENGINE
     binding = [{"p_{}".format(k): v for k, v in canonical.items()} for canonical in canonicals]
-    context.main_logger.info(canonicals)
-    context.main_logger.info(binding)
     device_table = model.metadata.tables['device']
     stmt = update(device_table).\
         values(device_token_new=bindparam('p_new_token')).\
@@ -133,6 +131,18 @@ def update_canonicals(canonicals):
                    func.coalesce(device_table.c.device_token_new, device_table.c.device_token) == bindparam('p_old_token')))
     ENGINE.execute(stmt, binding)
 
+def update_unregistered_devices(unregistered):
+    '''
+    Update data for unregistered Android devices.
+    '''
+    global ENGINE
+    binding = [{"p_{}".format(k): v for k, v in u.items()} for u in unregistered]
+    device_table = model.metadata.tables['device']
+    stmt = update(device_table).\
+        values(unregistered_ts=func.now()).\
+        where(and_(device_table.c.login_id == bindparam('p_login_id'),
+                   func.coalesce(device_table.c.device_token_new, device_table.c.device_token) == bindparam('p_device_token')))
+    ENGINE.execute(stmt, binding)
 
 def process_user_login(login_id, language_id, platform_id, device_id, device_token, application_version):
     '''
