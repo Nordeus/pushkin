@@ -73,7 +73,7 @@ class APNsPushSender(Sender):
 
         custom = {
             'path': notification['screen'],
-            'source': 'pushnordification',
+            'source': 'pushnotification',
             'campaign': str(notification['campaign_id']),
             'medium': str(notification['message_id']),
         }

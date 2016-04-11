@@ -102,6 +102,9 @@ class GcmNotificationSender(NotificationSender):
                 canonical_ids = sender.get_canonical_ids()
                 if len(canonical_ids) > 0:
                     database.update_canonicals(canonical_ids)
+                unregistered_devices = sender.get_unregistered_devices()
+                if len(unregistered_devices) > 0:
+                    database.update_unregistered_devices(unregistered_devices)
             except Exception:
                 main_logger.exception("GcmNotificationProcessor failed to send notifications")
             finally:

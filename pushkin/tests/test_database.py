@@ -99,3 +99,12 @@ def test_user(setup_database):
 
     database.delete_login(login)
     assert database.get_login(12345) is None
+
+def test_unregistered_device(setup_database):
+    login = database.upsert_login(12345, 7)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
+                                    application_version=1001)
+    assert len(database.get_device_tokens(12345).all()) == 1
+
+    database.update_unregistered_devices([{'login_id': device.login_id, 'device_token': device.device_token}])
+    assert len(database.get_device_tokens(12345).all()) == 0
