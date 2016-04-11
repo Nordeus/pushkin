@@ -16,7 +16,6 @@ from pushkin import context
 
 class RequestQueueHandler(tornado.web.RequestHandler):
     """Responds with number of items in RequestProcessor."""
-    URL = '/get_request_queue'
 
     def get(self):
         queue_size = context.request_processor.queue_size()
@@ -25,7 +24,6 @@ class RequestQueueHandler(tornado.web.RequestHandler):
 
 class ApnSenderQueueHandler(tornado.web.RequestHandler):
     """Responds with number of items in ApnSenderProcessor."""
-    URL = '/get_apn_sender_queue'
 
     def get(self):
         queue_size = context.request_processor.sender_manager.apn_sender_processor.queue_size()
@@ -34,7 +32,6 @@ class ApnSenderQueueHandler(tornado.web.RequestHandler):
 
 class GcmSenderQueueHandler(tornado.web.RequestHandler):
     """Responds with number of items in GcmSenderProcessor."""
-    URL = '/get_gcm_sender_queue'
 
     def get(self):
         queue_size = context.request_processor.sender_manager.gcm_sender_processor.queue_size()

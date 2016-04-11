@@ -9,6 +9,7 @@ from pushkin.request.request_processor import RequestProcessor
 from pushkin.requesthandlers.events import ProtoEventHandler
 from pushkin.requesthandlers.notifications import ProtoNotificationHandler
 from pushkin import test_config_ini_path
+from pushkin import config
 
 
 @pytest.fixture
@@ -60,7 +61,7 @@ def notification_batch_json():
 
 @pytest.fixture
 def post_notification_url(base_url):
-    return base_url + ProtoNotificationHandler.URL
+    return base_url + config.proto_notification_handler_url
 
 
 @pytest.fixture
@@ -103,7 +104,7 @@ def event_batch_json():
 
 @pytest.fixture
 def post_event_url(base_url):
-    return base_url + ProtoEventHandler.URL
+    return base_url + config.proto_event_handler_url
 
 
 @pytest.mark.gen_test

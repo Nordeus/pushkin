@@ -12,6 +12,7 @@ SERVER_CONFIG_SECTION = 'Server'
 MESSENGER_CONFIG_SECTION = 'Messenger'
 REQUEST_PROCESSOR_CONFIG_SECTION = 'RequestProcessor'
 SENDER_CONFIG_SECTION = 'Sender'
+REQUEST_HANDLER_SECTION = 'RequestHandler'
 
 log_levels = {
     'notset': logging.NOTSET,
@@ -47,6 +48,13 @@ def init(configuration_file):
     global keep_log_days
     global main_logger_name
     global notifications_logger_name
+    global proto_event_handler_url
+    global proto_notification_handler_url
+    global json_event_handler_url
+    global json_notification_handler_url
+    global request_queue_handler_url
+    global apn_sender_queue_handler_url
+    global gcm_sender_queue_handler_url
 
     config = ConfigParser.ConfigParser()
     config.read(configuration_file)
@@ -83,3 +91,12 @@ def init(configuration_file):
     db_name = config.get(DATABASE_CONFIG_SECTION, 'db_name')
     db_user = config.get(DATABASE_CONFIG_SECTION, 'db_user')
     db_pass = config.get(DATABASE_CONFIG_SECTION, 'db_pass')
+
+    #Handler URLs
+    proto_event_handler_url = config.get(REQUEST_HANDLER_SECTION, 'proto_event_handler_url')
+    proto_notification_handler_url = config.get(REQUEST_HANDLER_SECTION, 'proto_notification_handler_url')
+    json_event_handler_url = config.get(REQUEST_HANDLER_SECTION, 'json_event_handler_url')
+    json_notification_handler_url = config.get(REQUEST_HANDLER_SECTION, 'json_notification_handler_url')
+    request_queue_handler_url = config.get(REQUEST_HANDLER_SECTION, 'request_queue_handler_url')
+    apn_sender_queue_handler_url = config.get(REQUEST_HANDLER_SECTION, 'apn_sender_queue_handler_url')
+    gcm_sender_queue_handler_url = config.get(REQUEST_HANDLER_SECTION, 'gcm_sender_queue_handler_url')

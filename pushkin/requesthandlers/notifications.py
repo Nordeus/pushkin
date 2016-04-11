@@ -17,7 +17,6 @@ import json
 
 class ProtoNotificationHandler(BatchHandler):
     """Http handler for receiving proto notification batches."""
-    URL = '/post_notification_proto'
 
     def init_input_format(self, body):
         proto_request = PushNotificationMessage_pb2.BatchNotificationRequest()
@@ -39,7 +38,6 @@ class ProtoNotificationHandler(BatchHandler):
 
 class JsonNotificationHandler(BatchHandler):
     """Http handler for receiving JSON notification batches."""
-    URL = '/post_notification_json'
 
     def init_input_format(self, body):
         return json.loads(body)

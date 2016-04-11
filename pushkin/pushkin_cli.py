@@ -8,7 +8,6 @@ import sys
 import signal
 import os
 import os.path
-from daemon import runner
 from pushkin.requesthandlers.events import ProtoEventHandler, JsonEventHandler
 from pushkin.requesthandlers.notifications import ProtoNotificationHandler, JsonNotificationHandler
 from pushkin.request.request_processor import RequestProcessor
@@ -20,6 +19,7 @@ import multiprocessing
 
 from pushkin import context
 from pushkin.database import database
+from pushkin import config
 
 
 CONFIGURATION_FILENAME = None
@@ -34,13 +34,13 @@ def init():
 
 def create_app():
     application = tornado.web.Application([
-        (ProtoEventHandler.URL, ProtoEventHandler),
-        (ProtoNotificationHandler.URL, ProtoNotificationHandler),
-        (JsonEventHandler.URL, JsonEventHandler),
-        (JsonNotificationHandler.URL, JsonNotificationHandler),
-        (RequestQueueHandler.URL, RequestQueueHandler),
-        (ApnSenderQueueHandler.URL, ApnSenderQueueHandler),
-        (GcmSenderQueueHandler.URL, GcmSenderQueueHandler),
+        (config.proto_event_handler_url, ProtoEventHandler),
+        (config.proto_notification_handler_url, ProtoNotificationHandler),
+        (config.json_event_handler_url, JsonEventHandler),
+        (config.json_notification_handler_url, JsonNotificationHandler),
+        (config.request_queue_handler_url, RequestQueueHandler),
+        (config.apn_sender_queue_handler_url, ApnSenderQueueHandler),
+        (config.gcm_sender_queue_handler_url, GcmSenderQueueHandler),
     ])
     return application
 

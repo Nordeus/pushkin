@@ -17,7 +17,6 @@ import json
 
 class ProtoEventHandler(BatchHandler):
     """Http handler for receiving proto event batches."""
-    URL = '/post_events_proto'
 
     def init_input_format(self, body):
         proto_request = EventMessage_pb2.BatchEventRequest()
@@ -39,7 +38,6 @@ class ProtoEventHandler(BatchHandler):
 
 class JsonEventHandler(BatchHandler):
     """Http handler for receiving JSON event batches."""
-    URL = '/post_events_json'
 
     def init_input_format(self, body):
         return json.loads(body)

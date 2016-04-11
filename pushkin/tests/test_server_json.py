@@ -7,6 +7,7 @@ from pushkin.request.request_processor import RequestProcessor
 from pushkin.requesthandlers.events import JsonEventHandler
 from pushkin.requesthandlers.notifications import JsonNotificationHandler
 from pushkin import test_config_ini_path
+from pushkin import config
 
 
 @pytest.fixture
@@ -45,7 +46,7 @@ def notification_batch_json():
 
 @pytest.fixture
 def post_notification_url(base_url):
-    return base_url + JsonNotificationHandler.URL
+    return base_url + config.json_notification_handler_url
 
 @pytest.fixture
 def event_batch_json():
@@ -69,7 +70,7 @@ def event_batch_json():
 
 @pytest.fixture
 def post_event_url(base_url):
-    return base_url + JsonEventHandler.URL
+    return base_url + config.json_event_handler_url
 
 
 @pytest.mark.gen_test

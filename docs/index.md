@@ -349,13 +349,19 @@ Expects a set of (`login_id`, `message_id`) tuples.
 
 ### Introduction
 
-Pushkin supports two ways for sending push notifications - through notification and event api. Notification API is simpler to use and useful if you just want a quick and dirty way to send some push notifications quickly. Event API is where the full power of Pushkin is utilized - it allows you to decouple triggers for notifications from concrete notifications you want to send so you can configure your messages without having to change your main application. It also provides a monitoring set of methods which are useful in production environments when you want to monitor how your instances are doing under heavier loads.
+Pushkin supports two ways for sending push notifications - through notification and event API. Notification API is simpler to use and useful if you just want a quick and dirty way to send some push notifications quickly. Event API is where the full power of Pushkin is utilized - it allows you to decouple triggers for notifications from concrete notifications you want to send so you can configure your messages without having to change your main application. It also provides a monitoring set of methods which are useful in production environments when you want to monitor how your instances are doing under heavier loads.
 
 ---
 
 ### Format
 
 Pushkin uses HTTP POST requests for notification and event APIs and HTTP GET for monitoring API. Protocol Buffers and JSON are currently supported, but it is easy to extend to any other format in the future.
+
+---
+
+### API URLs
+
+All the URLs in the following documentation are the default ones. You can change these URLs of their respective handlers by modifying `config.ini` file.
 
 ---
 
@@ -701,6 +707,16 @@ db_pass = pushkin
 [Event]
 # event id of prebuilt login event
 login_event_id = 4001
+
+[RequestHandler]
+# URLs for all request handlers
+proto_event_handler_url = /post_events_proto
+proto_notification_handler_url = /post_notification_proto
+json_event_handler_url = /post_events_json
+json_notification_handler_url = /post_notification_json
+request_queue_handler_url = /get_request_queue
+apn_sender_queue_handler_url = /get_apn_sender_queue
+gcm_sender_queue_handler_url = /get_gcm_sender_queue
 ```
 
 ---
