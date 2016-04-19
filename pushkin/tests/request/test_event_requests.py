@@ -196,7 +196,7 @@ def test_login_and_then_other_event(setup, mocker):
     messages1 = event_request_other1.build_messages()
     assert len(messages1) == 0
 
-    # text parameter from event
+    # test parameter from event
     params = {'title_param': 'param title', 'text_param': 'param content'}
     event2 = EventRequestSingle(user_id=1, event_id=3, pairs=params, timestamp=1442502890000)
     event_request_other2 = EventRequestBatch([event2])
@@ -205,3 +205,9 @@ def test_login_and_then_other_event(setup, mocker):
     assert messages2[0]['message_id'] == 4
     assert messages2[0]['content'] == 'text param content'
     assert messages2[0]['title'] == 'title param title'
+
+    # test missing parameter which is required by localization
+    event3 = EventRequestSingle(user_id=1, event_id=3, pairs=None, timestamp=1442502890000)
+    event_request_other3 = EventRequestBatch([event3])
+    messages3 = event_request_other3.build_messages()
+    assert len(messages3) == 0

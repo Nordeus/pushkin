@@ -110,11 +110,15 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
         'sending_id': 0,
         'dry_run': dry_run
     }
-    for platform_id, device_token in get_device_tokens(login_id):
-        notification = base_notification.copy()
-        notification['receiver_id'] = device_token
-        notification['platform'] = platform_id
-        raw_messages.append(notification)
+    devices = get_device_tokens(login_id)
+    if devices.count() > 0:
+        for platform_id, device_token in devices:
+            notification = base_notification.copy()
+            notification['receiver_id'] = device_token
+            notification['platform'] = platform_id
+            raw_messages.append(notification)
+    else:
+        context.main_logger.debug("User with login_id={login_id} doesn't have any device.".format(login_id=login_id))
     return raw_messages
 
 

@@ -16,7 +16,6 @@ from pushkin import config
 
 """A place for handling events. Currently only login event is handled, this should be dinamycally configured in future."""
 
-
 class EventHandlerManager():
     """Responsible for invoking event handlers for given events."""
 
@@ -78,6 +77,8 @@ class LoginEventHandler(EventHandler):
         return result
 
 
+PARAM_REGEX = re.compile("\{[a-zA-Z0-9_]+\}")
+
 class EventToMessagesHandler(EventHandler):
     """Creates localized messages based on event_id to message_id mapping"""
 
@@ -92,13 +93,16 @@ class EventToMessagesHandler(EventHandler):
         # Allowed characters for parameter name are [a-zA-Z0-9_]
         def get_parameter(param_name):
             parameter = event_params.get(param_name)
+            if parameter is None:
+                raise Exception("Parameter '{param_name}' required in localization is missing from event!".
+                                format(param_name=param_name))
             if type(parameter) == unicode:
                 parameter = parameter.encode('utf-8')
             return parameter
 
         def get_parameter_map(parametrized_text):
             parameter_names = [key.group(0).strip("{}") for key in
-                               param_regex.finditer(parametrized_text)]
+                               PARAM_REGEX.finditer(parametrized_text)]
             parameter_map = {
                 param_name: get_parameter(param_name)
                 for param_name in parameter_names
@@ -106,7 +110,6 @@ class EventToMessagesHandler(EventHandler):
             return parameter_map
 
         raw_messages = []
-        param_regex = re.compile("\{[a-zA-Z0-9_]+\}")
         if self.event_id == event.event_id:
             for message_id in self.message_ids:
                 try:
