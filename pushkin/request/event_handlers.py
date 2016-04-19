@@ -96,22 +96,29 @@ class EventToMessagesHandler(EventHandler):
                 parameter = parameter.encode('utf-8')
             return parameter
 
+        def get_parameter_map(parametrized_text):
+            parameter_names = [key.group(0).strip("{}") for key in
+                               param_regex.finditer(parametrized_text)]
+            parameter_map = {
+                param_name: get_parameter(param_name)
+                for param_name in parameter_names
+            }
+            return parameter_map
+
         raw_messages = []
+        param_regex = re.compile("\{[a-zA-Z0-9_]+\}")
         if self.event_id == event.event_id:
             for message_id in self.message_ids:
                 try:
                     localized_message = database.get_localized_message(event.user_id, message_id)
-                    parameter_names = [key.group(0).strip("{}") for key in
-                                         re.finditer("\{[a-zA-Z0-9_]+\}", localized_message.message_text)]
-                    parameter_map = {
-                        param_name: get_parameter(param_name)
-                        for param_name in parameter_names
-                    }
+                    text_parameter_map = get_parameter_map(localized_message.message_text)
+                    title_parameter_map = get_parameter_map(localized_message.message_title)
+
                     if localized_message is not None:
                         raw_messages.extend(
                             database.get_raw_messages(
-                                login_id=event.user_id, title=localized_message.message_title,
-                                content=localized_message.message_text.format(**parameter_map),
+                                login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
+                                content=localized_message.message_text.format(**text_parameter_map),
                                 screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
                                 dry_run=config.dry_run, message_id=message_id
                             )

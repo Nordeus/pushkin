@@ -32,7 +32,11 @@ These two use cases can be seen on the diagram below:
 
 ### Step 0 - Requirements
 
-In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL 9.2+** installed and setup. Also you will need *Postgres* **hstore** extension in *pushkin* database.
+In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL 9.2+** installed and setup. Also you will need *Postgres* **hstore** extension in *pushkin* database. Here is how you can install all required software on CentOS with yum package manager:
+```bash
+yum install python27 python27-devel python27-pip python27-psycopg2 postgresql92-server postgresql92-devel postgresql92-contrib
+```
+In case of a problem with Postgres, detailed instructions can be found on [Postgres Wiki](https://wiki.postgresql.org/wiki/YUM_Installation).
 
 ---
 
@@ -97,6 +101,8 @@ You can see how to obtain these certificates on [Setup Certificates page](certif
 ---
 
 ### Step 4 - Starting Pushkin
+
+To start Pushkin you will need config.ini file. You can find example on [GitHub](https://github.com/Nordeus/pushkin/blob/master/config.ini).
 
 If you are starting Pushkin for the first time you should initialize the database which you created in *Step 2* with the following command:
 ```bash
@@ -184,9 +190,9 @@ Pushkin has two entities for working with notifications - **message** and **loca
 
 * `language_id` - language of a message, identified the same as in your application (`int`)
 
-* `message_title` - message title in specific language
+* `message_title` - message title in specific language, you can use parameters from event specified in curly brackets
 
-* `message_text` - message text in specific language
+* `message_text` - message text in specific language, you can use parameters from event specified in curly brackets
 
 * `message` - message entity
 
@@ -552,14 +558,71 @@ Used to register a device to a specific user. It also keeps track of user detail
 
 	* `applicationVersion` - Integer value of the current version of the application. For future use. Optional.
 
+Example:
+
+JSON request
+```json
+{
+  "events": [
+    {
+      "user_id" : 1338,
+      "event_id" : 4001,
+      "timestamp" : 1458823448000,
+      "pairs": {
+        "languageId": 1,
+        "platformId" : 1,
+        "deviceId" : "S342DFS",
+        "deviceToken" : "VD3#fd4",
+        "applicationVersion" : 1
+      }
+    }
+  ]
+}
+```
+
+**Event that triggers notification**
+
+Used to trigger notification for a specific user. It is required that Pushkin knows about a user, which means that it received Login event for that user before.
+
+* Event ID: any integer which is not reserved (you can choose any number for custom events outside of range `4000-4999`)
+
+* Key/Value pairs definition (optional):
+
+	* You can define custom parameters here which can be used in localization. Allowed characters for parameter name are letters of English alphabet, digits and underscore. You can reference you parameters by putting them in curly brackets.
+
+Example:
+
+Database API
+```python
+database.add_message('example_message', 1, 'title', 'text {param}', 1001)
+```
+JSON request
+```json
+{
+  "events": [
+    {
+      "user_id" : 1338,
+      "event_id" : 1001,
+      "timestamp" : 1458823448000,
+      "pairs": {
+        "param" : "param value"
+      }
+    }
+  ]
+}
+```
+
 **Notes:**   
 Be careful about correct [JSON](http://www.json.org/) syntax! For example, it is important to quote string fields and to leave numeric fields unquoted. Refer to example for a quick check.
 It is required to register devices to recipient user first. This can be done either through database API or by sending login events through event API.
 Event API takes user's current language id into consideration and will messages with the same localization id.
 
 
-**Example:**   
-Send two events in a single batch
+**Send multiple events in a single request**
+
+Pushkin has support for batching multiple events in a single request.
+
+Example (send two events in a single batch):
 
 JSON String
 ```json
@@ -572,13 +635,14 @@ JSON String
     },
     {
       "user_id" : 1338,
-      "event_id" : 1,
+      "event_id" : 4001,
       "timestamp" : 1458823448000,
       "pairs": {
-        "platformId" : "1",
+        "languageId": 1,
+        "platformId" : 1,
         "deviceId" : "S342DFS",
         "deviceToken" : "VD3#fd4",
-        "applicationVersion" : "1"
+        "applicationVersion" : 1
       }
     }
   ]
@@ -601,6 +665,8 @@ login_event.event_id = 4001
 login_event.timestamp = 1458823448000
 # add some parameters
 pair = event_proto.pairs.add()
+pair.key = 'languageId'
+pair.value = '1'
 pair.key = 'platformId'
 pair.value = '1'
 pair = event_proto.pairs.add()
