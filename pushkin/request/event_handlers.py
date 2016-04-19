@@ -9,6 +9,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 from collections import defaultdict
+import re
 from pushkin.database import database
 from pushkin import context
 from pushkin import config
@@ -87,16 +88,30 @@ class EventToMessagesHandler(EventHandler):
         self.message_ids = message_ids
 
     def handle_event(self, event, event_params):
+
+        # Allowed characters for parameter name are [a-zA-Z0-9_]
+        def get_parameter(param_name):
+            parameter = event_params.get(param_name)
+            if type(parameter) == unicode:
+                parameter = parameter.encode('utf-8')
+            return parameter
+
         raw_messages = []
         if self.event_id == event.event_id:
             for message_id in self.message_ids:
                 try:
                     localized_message = database.get_localized_message(event.user_id, message_id)
+                    parameter_names = [key.group(0).strip("{}") for key in
+                                         re.finditer("\{[a-zA-Z0-9_]+\}", localized_message.message_text)]
+                    parameter_map = {
+                        param_name: get_parameter(param_name)
+                        for param_name in parameter_names
+                    }
                     if localized_message is not None:
                         raw_messages.extend(
                             database.get_raw_messages(
                                 login_id=event.user_id, title=localized_message.message_title,
-                                content=localized_message.message_text,
+                                content=localized_message.message_text.format(**parameter_map),
                                 screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
                                 dry_run=config.dry_run, message_id=message_id
                             )
