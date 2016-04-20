@@ -569,11 +569,11 @@ JSON request
       "event_id" : 4001,
       "timestamp" : 1458823448000,
       "pairs": {
-        "languageId": 1,
-        "platformId" : 1,
+        "languageId": "1",
+        "platformId" : "1",
         "deviceId" : "S342DFS",
         "deviceToken" : "VD3#fd4",
-        "applicationVersion" : 1
+        "applicationVersion" : "1"
       }
     }
   ]
@@ -638,11 +638,11 @@ JSON String
       "event_id" : 4001,
       "timestamp" : 1458823448000,
       "pairs": {
-        "languageId": 1,
-        "platformId" : 1,
+        "languageId": "1",
+        "platformId" : "1",
         "deviceId" : "S342DFS",
         "deviceToken" : "VD3#fd4",
-        "applicationVersion" : 1
+        "applicationVersion" : "1"
       }
     }
   ]
