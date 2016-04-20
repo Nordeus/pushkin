@@ -32,7 +32,9 @@ These two use cases can be seen on the diagram below:
 
 ### Step 0 - Requirements
 
-In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL 9.2+** installed and setup. Also you will need *Postgres* **hstore** extension in *pushkin* database. Here is how you can install all required software on CentOS with yum package manager:
+In order to run Pushkin you must have **Python2.7**, **pip2.7**, **PostgreSQL 9.2+** installed and setup. Also you will need *Postgres* **hstore** extension in *pushkin* database.
+
+Example on CentOS:
 ```bash
 yum install python27 python27-devel python27-pip python27-psycopg2 postgresql92-server postgresql92-devel postgresql92-contrib
 ```
@@ -531,6 +533,10 @@ message BatchEventRequest {
 
 * `pairs` - Key/value pairs used to parametrize the event.
 
+	* You can define custom parameters which can be used in localization. Allowed characters for parameter name are letters of English alphabet, digits and underscore. You can reference parameters by putting them in curly brackets.
+
+	* Some parameters are required in predefined events.
+
 **Predefined events**
 
 Pushkin defines prebuilt events which you can use immediately. Those are events in range `4000-4999` and you should not define custom events in this range. List of prebuilt events:
@@ -588,7 +594,7 @@ Used to trigger notification for a specific user. It is required that Pushkin kn
 
 * Key/Value pairs definition (optional):
 
-	* You can define custom parameters here which can be used in localization. Allowed characters for parameter name are letters of English alphabet, digits and underscore. You can reference you parameters by putting them in curly brackets.
+	* You can define custom parameters which can be used in localization.
 
 Example:
 
