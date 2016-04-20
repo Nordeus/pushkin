@@ -50,6 +50,7 @@ def prepare_demodata():
     database.add_message('msg1', 1, 'title', 'text', 1)
     database.add_message('msg2', 1, 'title', 'text', 1)
     database.add_message('msg3', 1, 'title', 'text', 2)
+    database.add_message('msg4', 1, 'title {title_param}', 'text {text_param}', 3)
 
 
 def create_batch_with_login_event(user_id, platform_id, device_id, device_token):
@@ -190,7 +191,23 @@ def test_login_and_then_other_event(setup, mocker):
     event_request_platform1.process()
 
     # test no message
-    event3 = EventRequestSingle(1, -1, None, 1442502890000)
+    event1 = EventRequestSingle(1, -1, None, 1442502890000)
+    event_request_other1 = EventRequestBatch([event1])
+    messages1 = event_request_other1.build_messages()
+    assert len(messages1) == 0
+
+    # test parameter from event
+    params = {'title_param': 'param title', 'text_param': 'param content'}
+    event2 = EventRequestSingle(user_id=1, event_id=3, pairs=params, timestamp=1442502890000)
+    event_request_other2 = EventRequestBatch([event2])
+    messages2 = event_request_other2.build_messages()
+    assert len(messages2) == 1
+    assert messages2[0]['message_id'] == 4
+    assert messages2[0]['content'] == 'text param content'
+    assert messages2[0]['title'] == 'title param title'
+
+    # test missing parameter which is required by localization
+    event3 = EventRequestSingle(user_id=1, event_id=3, pairs=None, timestamp=1442502890000)
     event_request_other3 = EventRequestBatch([event3])
     messages3 = event_request_other3.build_messages()
     assert len(messages3) == 0
