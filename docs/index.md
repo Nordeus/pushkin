@@ -543,7 +543,7 @@ Pushkin defines prebuilt events which you can use immediately. Those are events 
 
 **Login event**
 
-Used to register a device to a specific user. It also keeps track of user details. It is recommended to send this when the user logs in your application if you support such functionality.
+Used to register a device to a specific user. It also keeps track of user details. It is required to send this predefined event in order to enable Pushkin to work.
 
 * Event ID: 4001
 
