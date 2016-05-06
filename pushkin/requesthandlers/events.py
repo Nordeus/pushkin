@@ -13,6 +13,7 @@ from batch import BatchHandler
 from pushkin.request.requests import EventRequestBatch
 from pushkin.request.request_validators import ProtoEventValidator, JsonEventValidator
 from pushkin.request.requests import EventRequestSingle
+from pushkin import context
 import json
 
 class ProtoEventHandler(BatchHandler):
@@ -32,6 +33,8 @@ class ProtoEventHandler(BatchHandler):
         for request in requests:
             if validator.validate_single(request):
                 valid_requests.append(EventRequestSingle(request.user_id, request.event_id, {pair.key:pair.value for pair in request.pairs}, request.timestamp))
+            else:
+                context.main_logger.error("Request not valid: {req}".format(req=str(request.__dict__)))
 
         return EventRequestBatch(valid_requests)
 

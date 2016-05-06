@@ -114,10 +114,10 @@ class EventToMessagesHandler(EventHandler):
             for message_id in self.message_ids:
                 try:
                     localized_message = database.get_localized_message(event.user_id, message_id)
-                    text_parameter_map = get_parameter_map(localized_message.message_text)
-                    title_parameter_map = get_parameter_map(localized_message.message_title)
 
                     if localized_message is not None:
+                        text_parameter_map = get_parameter_map(localized_message.message_text)
+                        title_parameter_map = get_parameter_map(localized_message.message_title)
                         raw_messages.extend(
                             database.get_raw_messages(
                                 login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
