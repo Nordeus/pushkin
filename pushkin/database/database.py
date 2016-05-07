@@ -160,7 +160,7 @@ def process_user_login(login_id, language_id, platform_id, device_id, device_tok
 
 def upsert_login(login_id, language_id):
     '''
-    Add or update a login entity.
+    Add or update a login entity. Returns new or updated login.
     '''
     session = get_session()
     login = session.query(model.Login).filter(model.Login.id == login_id).one_or_none()
@@ -170,12 +170,13 @@ def upsert_login(login_id, language_id):
         login = model.Login(id=login_id, language_id=language_id)
         session.add(login)
     session.commit()
+    session.refresh(login)
     session.close()
     return login
 
 def upsert_device(login_id, platform_id, device_id, device_token, application_version, unregistered_ts=None):
     '''
-    Add or update a device entity.
+    Add or update a device entity. Returns new or updated device with relation to login preloaded.
     '''
     session = get_session()
     login = session.query(model.Login).filter(model.Login.id == login_id).one()
@@ -194,6 +195,8 @@ def upsert_device(login_id, platform_id, device_id, device_token, application_ve
                               application_version=application_version, unregistered_ts=unregistered_ts)
         session.add(device)
     session.commit()
+    session.refresh(device)
+    session.refresh(device.login)
     session.close()
     return device
 
@@ -215,14 +218,25 @@ def get_login(login_id):
     session.close()
     return login
 
+def get_devices(login):
+    '''
+    Get devices of a specific login.
+    '''
+    session = get_session()
+    reloaded_login = session.query(model.Login).filter(model.Login.id == login.id).one()
+    devices = reloaded_login.devices
+    session.close()
+    return devices
+
 def delete_login(login):
     '''
     Delete a specific login together with all devices of that user.
     '''
     session = get_session()
-    for device in login.devices:
+    reloaded_login = session.query(model.Login).filter(model.Login.id == login.id).one()
+    for device in reloaded_login.devices:
         session.delete(device)
-    session.delete(login)
+    session.delete(reloaded_login)
     session.commit()
     session.close()
 
@@ -231,7 +245,8 @@ def delete_device(device):
     Delete a specific device.
     '''
     session = get_session()
-    session.delete(device)
+    reloaded_device = session.query(model.Device).filter(model.Device.id == device.id).one()
+    session.delete(reloaded_device)
     session.commit()
     session.close()
 
@@ -252,7 +267,7 @@ def get_localized_message(login_id, message_id):
 
 def upsert_message(message_name, cooldown_ts, trigger_event_id, screen):
     '''
-    Add or update a message.
+    Add or update a message. Returns new or updated message.
     '''
     session = get_session()
     message = session.query(model.Message).filter(model.Message.name == message_name).one_or_none()
@@ -264,12 +279,13 @@ def upsert_message(message_name, cooldown_ts, trigger_event_id, screen):
         message = model.Message(name=message_name, cooldown_ts=cooldown_ts, trigger_event_id=trigger_event_id, screen=screen)
         session.add(message)
     session.commit()
+    session.refresh(message)
     session.close()
     return message
 
 def upsert_message_localization(message_name, language_id, message_title, message_text):
     '''
-    Add or update a message localization.
+    Add or update a message localization. Returns new or updated localization with relation to message preloaded.
     '''
     session = get_session()
     message = session.query(model.Message).filter(model.Message.name == message_name).one()
@@ -285,6 +301,8 @@ def upsert_message_localization(message_name, language_id, message_title, messag
                                                          message_title=message_title, message_text=message_text)
         session.add(message_localization)
     session.commit()
+    session.refresh(message_localization)
+    session.refresh(message_localization.message)
     session.close()
     return message_localization
 
@@ -315,14 +333,26 @@ def get_message(message_name):
     session.close()
     return message
 
+def get_message_localizations(message):
+    '''
+    Get all localizations for a specific message.
+    '''
+    session = get_session()
+    reloaded_message = session.query(model.Message).filter(model.Message.id == message.id).one()
+    localizations = reloaded_message.localizations
+    session.close()
+    return localizations
+
+
 def delete_message(message):
     '''
     Delete a specific message with all localizations.
     '''
     session = get_session()
-    for message_localization in message.localizations:
+    reloaded_message = session.query(model.Message).filter(model.Message.id == message.id).one()
+    for message_localization in reloaded_message.localizations:
         session.delete(message_localization)
-    session.delete(message)
+    session.delete(reloaded_message)
     session.commit()
     session.close()
 
@@ -331,7 +361,8 @@ def delete_message_localization(message_localization):
     Delete a specific message localization.
     '''
     session = get_session()
-    session.delete(message_localization)
+    reloaded_message_localization = session.query(model.MessageLocalization).filter(model.MessageLocalization.id == message_localization.id).one()
+    session.delete(reloaded_message_localization)
     session.commit()
     session.close()
 
