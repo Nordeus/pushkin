@@ -16,7 +16,7 @@ from pushkin import config, context
 from collections import defaultdict
 
 from pushkin.database import model
-from sqlalchemy.orm import sessionmaker, joinedload
+from sqlalchemy.orm import sessionmaker, contains_eager
 from sqlalchemy import create_engine, func, text, update, bindparam, and_
 
 import psycopg2 as dbapi2
@@ -24,19 +24,18 @@ import psycopg2.extras
 
 """Module containing database wrapper calls."""
 
-ENGINE=None
-SESSION=None
+ENGINE = None
+SESSION = None
 
 def init_db():
     global ENGINE
     global SESSION
     if ENGINE is None:
         ENGINE = create_engine('postgresql+psycopg2://{db_user}:{db_pass}@localhost:5432/{db_name}'.format(
-            db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name))
+            db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name), pool_size=config.db_pool_size, max_overflow=0)
 
 def create_database():
     """Create database by executing db_create.sql"""
-    close_session()
     db_create_sql_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'db_create.sql')
     with open(db_create_sql_path, 'r') as fd:
         sql_create_commands = fd.read()
@@ -54,7 +53,7 @@ def execute_query_with_results(query):
     '''
     Execute a specific query and return results.
     '''
-    with dbapi2.connect('postgresql://{db_user}:{db_pass}@localhost:5432/{db_name}'.format(db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
+    with dbapi2.connect('host=localhost user={db_user} password={db_pass} port=5432 dbname={db_name}'.format(db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute(query)
             rows = cur.fetchall()
@@ -67,17 +66,9 @@ def get_session():
     global ENGINE
     global SESSION
     if SESSION is None:
-        Session = sessionmaker(bind=ENGINE)
-        SESSION = Session()
-    return SESSION
-
-def close_session():
-    '''
-    Close SQLAlchemy session.
-    '''
-    global SESSION
-    if SESSION is not None:
-        SESSION.close()
+        SESSION = sessionmaker(bind=ENGINE)
+    session = SESSION()
+    return session
 
 
 def get_device_tokens(login_id):
@@ -85,9 +76,11 @@ def get_device_tokens(login_id):
     Get device tokens for a given login.
     '''
     session = get_session()
-    return session.query(model.Device.platform_id,
-                  func.coalesce(model.Device.device_token_new, model.Device.device_token).label('device_token')).\
-        filter(model.Device.login_id == login_id).filter(model.Device.unregistered_ts.is_(None))
+    result = session.query(model.Device.platform_id,
+                    func.coalesce(model.Device.device_token_new, model.Device.device_token).label('device_token')).\
+        filter(model.Device.login_id == login_id).filter(model.Device.unregistered_ts.is_(None)).all()
+    session.close()
+    return result
 
 
 def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, message_id=0):
@@ -97,8 +90,8 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
     raw_messages = []
     base_notification = {
         'login_id': login_id,
-        'title': title.decode('utf-8'),
-        'content': content.decode('utf-8'),
+        'title': title,
+        'content': content,
         'game': game,
         'world_id': world_id,
         'screen': screen,
@@ -111,7 +104,7 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
         'dry_run': dry_run
     }
     devices = get_device_tokens(login_id)
-    if devices.count() > 0:
+    if len(devices) > 0:
         for platform_id, device_token in devices:
             notification = base_notification.copy()
             notification['receiver_id'] = device_token
@@ -163,10 +156,11 @@ def process_user_login(login_id, language_id, platform_id, device_id, device_tok
                     'application_version': application_version,
                     })
     session.commit()
+    session.close()
 
 def upsert_login(login_id, language_id):
     '''
-    Add or update a login entity.
+    Add or update a login entity. Returns new or updated login.
     '''
     session = get_session()
     login = session.query(model.Login).filter(model.Login.id == login_id).one_or_none()
@@ -176,11 +170,13 @@ def upsert_login(login_id, language_id):
         login = model.Login(id=login_id, language_id=language_id)
         session.add(login)
     session.commit()
+    session.refresh(login)
+    session.close()
     return login
 
 def upsert_device(login_id, platform_id, device_id, device_token, application_version, unregistered_ts=None):
     '''
-    Add or update a device entity.
+    Add or update a device entity. Returns new or updated device with relation to login preloaded.
     '''
     session = get_session()
     login = session.query(model.Login).filter(model.Login.id == login_id).one()
@@ -199,6 +195,9 @@ def upsert_device(login_id, platform_id, device_id, device_token, application_ve
                               application_version=application_version, unregistered_ts=unregistered_ts)
         session.add(device)
     session.commit()
+    session.refresh(device)
+    session.refresh(device.login)
+    session.close()
     return device
 
 def get_all_logins():
@@ -207,6 +206,7 @@ def get_all_logins():
     '''
     session = get_session()
     logins = session.query(model.Login).all()
+    session.close()
     return logins
 
 def get_login(login_id):
@@ -215,25 +215,40 @@ def get_login(login_id):
     '''
     session = get_session()
     login = session.query(model.Login).filter(model.Login.id == login_id).one_or_none()
+    session.close()
     return login
+
+def get_devices(login):
+    '''
+    Get devices of a specific login.
+    '''
+    session = get_session()
+    reloaded_login = session.query(model.Login).filter(model.Login.id == login.id).one()
+    devices = reloaded_login.devices
+    session.close()
+    return devices
 
 def delete_login(login):
     '''
     Delete a specific login together with all devices of that user.
     '''
     session = get_session()
-    for device in login.devices:
+    reloaded_login = session.query(model.Login).filter(model.Login.id == login.id).one()
+    for device in reloaded_login.devices:
         session.delete(device)
-    session.delete(login)
+    session.delete(reloaded_login)
     session.commit()
+    session.close()
 
 def delete_device(device):
     '''
     Delete a specific device.
     '''
     session = get_session()
-    session.delete(device)
+    reloaded_device = session.query(model.Device).filter(model.Device.id == device.id).one()
+    session.delete(reloaded_device)
     session.commit()
+    session.close()
 
 def get_localized_message(login_id, message_id):
     '''
@@ -242,14 +257,17 @@ def get_localized_message(login_id, message_id):
     If translation for language of a user doesn't exist English translation is given.
     '''
     session = get_session()
-    localized_message = session.query(model.MessageLocalization).options(joinedload(model.MessageLocalization.message)).\
-        from_statement(text("select * from get_localized_message(:login_id, :message_id)")).\
-        params(login_id=login_id, message_id=message_id).first()
+    localized_message = session.query(model.MessageLocalization).\
+        from_statement(text("select lm.*, m.* from get_localized_message(:login_id, :message_id) lm inner join message m on lm.message_id = m.id")).\
+        params(login_id=login_id, message_id=message_id).\
+        options(contains_eager(model.MessageLocalization.message)).\
+        one_or_none()
+    session.close()
     return localized_message
 
 def upsert_message(message_name, cooldown_ts, trigger_event_id, screen):
     '''
-    Add or update a message.
+    Add or update a message. Returns new or updated message.
     '''
     session = get_session()
     message = session.query(model.Message).filter(model.Message.name == message_name).one_or_none()
@@ -261,11 +279,13 @@ def upsert_message(message_name, cooldown_ts, trigger_event_id, screen):
         message = model.Message(name=message_name, cooldown_ts=cooldown_ts, trigger_event_id=trigger_event_id, screen=screen)
         session.add(message)
     session.commit()
+    session.refresh(message)
+    session.close()
     return message
 
 def upsert_message_localization(message_name, language_id, message_title, message_text):
     '''
-    Add or update a message localization.
+    Add or update a message localization. Returns new or updated localization with relation to message preloaded.
     '''
     session = get_session()
     message = session.query(model.Message).filter(model.Message.name == message_name).one()
@@ -281,6 +301,9 @@ def upsert_message_localization(message_name, language_id, message_title, messag
                                                          message_title=message_title, message_text=message_text)
         session.add(message_localization)
     session.commit()
+    session.refresh(message_localization)
+    session.refresh(message_localization.message)
+    session.close()
     return message_localization
 
 def add_message(message_name, language_id, message_title, message_text, trigger_event_id=None, cooldown_ts=None,
@@ -298,6 +321,7 @@ def get_all_messages():
     '''
     session = get_session()
     messages = session.query(model.Message).all()
+    session.close()
     return messages
 
 def get_message(message_name):
@@ -306,25 +330,41 @@ def get_message(message_name):
     '''
     session = get_session()
     message = session.query(model.Message).filter(model.Message.name == message_name).one_or_none()
+    session.close()
     return message
+
+def get_message_localizations(message):
+    '''
+    Get all localizations for a specific message.
+    '''
+    session = get_session()
+    reloaded_message = session.query(model.Message).filter(model.Message.id == message.id).one()
+    localizations = reloaded_message.localizations
+    session.close()
+    return localizations
+
 
 def delete_message(message):
     '''
     Delete a specific message with all localizations.
     '''
     session = get_session()
-    for message_localization in message.localizations:
+    reloaded_message = session.query(model.Message).filter(model.Message.id == message.id).one()
+    for message_localization in reloaded_message.localizations:
         session.delete(message_localization)
-    session.delete(message)
+    session.delete(reloaded_message)
     session.commit()
+    session.close()
 
 def delete_message_localization(message_localization):
     '''
     Delete a specific message localization.
     '''
     session = get_session()
-    session.delete(message_localization)
+    reloaded_message_localization = session.query(model.MessageLocalization).filter(model.MessageLocalization.id == message_localization.id).one()
+    session.delete(reloaded_message_localization)
     session.commit()
+    session.close()
 
 def get_event_to_message_mapping():
     '''
@@ -335,6 +375,7 @@ def get_event_to_message_mapping():
     mapping = defaultdict(list)
     for trigger_event_id, id in messages_with_event:
         mapping[trigger_event_id].append(id)
+    session.close()
     return mapping
 
 
@@ -348,7 +389,7 @@ def get_and_update_messages_to_send(user_message_set):
         ["'{key}=>{value}'::hstore".format(key=entry[0], value=entry[1]) for entry in user_message_set])
     hstore_array = 'ARRAY[{}]'.format(hstore_items)
     query = 'SELECT get_and_update_messages_to_send({})'.format(hstore_array)
-    with dbapi2.connect('postgresql://{db_user}:{db_pass}@localhost:5432/{db_name}'.format(db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
+    with dbapi2.connect('host=localhost user={db_user} password={db_pass} port=5432 dbname={db_name}'.format(db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
         psycopg2.extras.register_hstore(conn)
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute(query)

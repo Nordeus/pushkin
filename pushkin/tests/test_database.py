@@ -48,6 +48,7 @@ def test_message(setup_database):
     # message with english only translation
     message_1 = database.add_message(message_name='test', language_id=1, message_title='title en',
                                       message_text='text en')
+    assert message_1.message_id == 1
     localized_message = database.get_localized_message(login_id=12345, message_id=message_1.message_id)
     assert localized_message.message_title == 'title en'
     assert localized_message.message_text == 'text en'
@@ -88,14 +89,22 @@ def test_message(setup_database):
 
 def test_user(setup_database):
     login = database.upsert_login(12345, 7)
-    assert login == database.get_login(12345)
+    reloaded_login = database.get_login(12345)
+    assert login.id == reloaded_login.id
+    assert login.language_id == reloaded_login.language_id
+
 
     device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
                                     application_version=1001, unregistered_ts=datetime.datetime.now())
-    assert device == login.devices[0]
+    reloaded_devices = database.get_devices(login)
+    assert device.id == reloaded_devices[0].id
+    assert device.login_id == reloaded_devices[0].login_id
+    assert device.platform_id == reloaded_devices[0].platform_id
+    assert device.device_id == reloaded_devices[0].device_id
+    assert device.device_token == reloaded_devices[0].device_token
 
     database.delete_device(device)
-    assert len(login.devices) == 0
+    assert len(database.get_devices(login)) == 0
 
     database.delete_login(login)
     assert database.get_login(12345) is None
@@ -104,7 +113,7 @@ def test_unregistered_device(setup_database):
     login = database.upsert_login(12345, 7)
     device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
                                     application_version=1001)
-    assert len(database.get_device_tokens(12345).all()) == 1
+    assert len(database.get_device_tokens(12345)) == 1
 
     database.update_unregistered_devices([{'login_id': device.login_id, 'device_token': device.device_token}])
-    assert len(database.get_device_tokens(12345).all()) == 0
+    assert len(database.get_device_tokens(12345)) == 0

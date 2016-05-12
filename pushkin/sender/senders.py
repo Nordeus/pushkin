@@ -9,15 +9,16 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 from Queue import Empty
+from threading import Thread
 import time
 import logging
+import multiprocessing
 
 from pushkin.database import database
 from pushkin.sender.nordifier.apns_push_sender import APNsPushSender
 from pushkin.sender.nordifier.gcm_push_sender import GCMPushSender
 from pushkin.util.pool import ProcessPool
-from pushkin import context
-from pushkin import config
+from pushkin import config, context
 from pushkin.sender.nordifier import constants
 
 
@@ -44,6 +45,40 @@ class NotificationSender(ProcessPool):
             except:
                 main_logger.exception("Error while logging notification to csv log!")
 
+class NotificationOperation():
+    '''Represents operation which should be executed outside of process pool'''
+    def __init__(self, operation, data):
+        self.operation = operation
+        self.data = data
+
+class NotificationPostProcessor(Thread):
+    UPDATE_CANONICALS = 1
+    UPDATE_UNREGISTERED_DEVICES = 2
+    OPERATION_QUEUE = multiprocessing.Queue()
+
+    def __init__(self):
+        Thread.__init__(self)
+        self.daemon = True
+
+    def update_canonicals(self, canonical_ids):
+        database.update_canonicals(canonical_ids)
+
+    def update_unregistered_devices(self, unregistered_devices):
+        database.update_unregistered_devices(unregistered_devices)
+
+    def run(self):
+        while True:
+            try:
+                record = NotificationPostProcessor.OPERATION_QUEUE.get()
+                if record.operation == NotificationPostProcessor.UPDATE_CANONICALS:
+                    self.update_canonicals(record.data)
+                elif record.operation == NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES:
+                    self.update_unregistered_devices(record.data)
+                else:
+                    context.main_logger.error("NotificationPostProcessor - unknown operation: {operation}".format(operation=record.operation))
+            except:
+                context.main_logger.exception("Exception while post processing notification.")
+                pass
 
 class ApnNotificationSender(NotificationSender):
     def __init__(self):
@@ -68,18 +103,17 @@ class ApnNotificationSender(NotificationSender):
         return sent
 
     def process(self):
-        main_logger = logging.getLogger(config.main_logger_name)
         while True:
             if self.queue_size() > 0:
 
                 sender = None
                 sent = []
                 try:
-                    sender = APNsPushSender(config.config, main_logger)
+                    sender = APNsPushSender(config.config, context.main_logger)
                     sent = self.send_batch(sender)
                     time.sleep(self.apn_sender_interval_sec)
                 except Exception:
-                    main_logger.exception("ApnNotificationProcessor failed to send notifications")
+                    context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
                 finally:
                     if sender is not None:
                         sender.close_after_sending()
@@ -101,10 +135,10 @@ class GcmNotificationSender(NotificationSender):
                 sender.send_in_batch(notification)
                 canonical_ids = sender.get_canonical_ids()
                 if len(canonical_ids) > 0:
-                    database.update_canonicals(canonical_ids)
+                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
                 unregistered_devices = sender.get_unregistered_devices()
                 if len(unregistered_devices) > 0:
-                    database.update_unregistered_devices(unregistered_devices)
+                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
             except Exception:
                 main_logger.exception("GcmNotificationProcessor failed to send notifications")
             finally:

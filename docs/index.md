@@ -247,14 +247,13 @@ database.process_user_login(login_id=12345, language_id=1, platform_id=1, device
 
 ### Database module
 
+Database module consists of ORM model for [SQLAlchemy](http://www.sqlalchemy.org/) and wrapper functions.
+Wrapper functions can be used to load, update or delete data from database. ORM model uses lazy loading approach, while wrapper functions use eager loading approach.
+Objects returned by wrapper functions has all fields and many to one relationships preloaded. One to many relationships can be loaded with specific functions.
+
 * Get SQLAlchemy session.
 ```python
 pushkin.database.get_session()
-```
-
-* Close SQLAlchemy session
-```python
-pushkin.database.close_session()
 ```
 
 * Get device tokens for a given login
@@ -267,12 +266,12 @@ pushkin.database.get_device_tokens(login_id)
 process_user_login(login_id, language_id, platform_id, device_id, device_token, application_version)
 ```
 
-* Add or update a login entity.
+* Add or update a login entity. Returns new or updated login.
 ```python
 upsert_login(login_id, language_id)
 ```
 
-* Add or update a device entity.
+* Add or update a device entity. Returns new or updated device with relation to login preloaded.
 ```python
 upsert_device(login_id, platform_id, device_id, device_token, application_version, unregistered_ts=None)
 ```
@@ -285,6 +284,11 @@ get_all_logins()
 * Get a specific login by id.
 ```python
 get_login(login_id)
+```
+
+* Get devices of a specific login.
+```python
+get_devices(login)
 ```
 
 * Delete a specific login together with all devices of that user.
@@ -304,7 +308,7 @@ get_localized_message(login_id, message_id)
 
 If translation for the language of a user doesn't exist English translation is given.
 
-* Add or update a message.
+* Add or update a message. Returns new or updated message.
 ```python
 upsert_message(message_name, cooldown_ts, trigger_event_id, screen)
 ```
@@ -314,7 +318,7 @@ upsert_message(message_name, cooldown_ts, trigger_event_id, screen)
 upsert_message_localization(message_name, language_id, message_title, message_text)
 ```
 
-* Add or update a message with localization for one language.
+* Add or update a message localization. Returns new or updated localization with relation to message preloaded.
 ```python
 add_message(message_name, language_id, message_title, message_text, trigger_event_id=None, cooldown_ts=None, screen='')
 ```
@@ -327,6 +331,11 @@ get_all_messages()
 * Get a specific message.
 ```python
 get_message(message_name)
+```
+
+* Get all localizations for a specific message.
+```python
+get_message_localizations(message)
 ```
 
 * Delete a specific message with all localizations.

@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 from pushkin.sender.nordifier import constants
 from .senders import ApnNotificationSender
 from .senders import GcmNotificationSender
+from .senders import NotificationPostProcessor
 from pushkin import context
 
 
@@ -18,6 +19,7 @@ class NotificationSenderManager():
     def __init__(self):
         self.apn_sender_processor = ApnNotificationSender()
         self.gcm_sender_processor = GcmNotificationSender()
+        self.notification_post_processor = NotificationPostProcessor()
 
     def submit(self, notification):
         if notification['platform'] in [constants.PLATFORM_ANDROID, constants.PLATFORM_ANDROID_TABLET]:
@@ -34,3 +36,4 @@ class NotificationSenderManager():
     def start(self):
         self.apn_sender_processor.start()
         self.gcm_sender_processor.start()
+        self.notification_post_processor.start()
