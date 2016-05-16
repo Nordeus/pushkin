@@ -27,6 +27,13 @@ def init():
     context.setup_configuration(CONFIGURATION_FILENAME)
     database.init_db()
 
+    current_revision = database.get_current_revision()
+    head_revision = database.get_head_revision()
+    if head_revision != current_revision:
+        print("Database is not up to date! "
+              "To upgrade database run pushkin --configuration {cfg} --upgrade-db".format(cfg=CONFIGURATION_FILENAME))
+        sys.exit(1)
+
     context.log_queue = multiprocessing.Queue()
     context.request_processor = RequestProcessor()
     context.event_handler_manager = EventHandlerManager()
@@ -90,17 +97,15 @@ def main():
 
     parser = argparse.ArgumentParser(description='Service for sending push notifications')
     parser.add_argument('--configuration', dest='configuration_filename', required=True, help='Configuration file')
-    parser.add_argument('--init-db', help='Initialize database', action='store_true')
+    parser.add_argument('--upgrade-db', help='Upgrade database', action='store_true')
 
     args = parser.parse_args()
     absolute_configuration_path = os.path.abspath(args.configuration_filename)
 
     CONFIGURATION_FILENAME = absolute_configuration_path
 
-    if args.init_db:
-        context.setup_configuration(CONFIGURATION_FILENAME)
-        database.init_db()
-        database.create_database()
+    if args.upgrade_db:
+        database.upgrade_database()
     else:
         run()
 

@@ -22,17 +22,22 @@ from sqlalchemy import create_engine, func, text, update, bindparam, and_
 import psycopg2 as dbapi2
 import psycopg2.extras
 
+from alembic.config import Config as AlembicConfig
+from alembic import command as alembic_command
+from alembic.script import ScriptDirectory as AlembicScriptDirectory
+from alembic.migration import MigrationContext as AlembicMigrationContext
+
 """Module containing database wrapper calls."""
 
 ENGINE = None
 SESSION = None
+ALEMBIC_CONFIG = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alembic.ini')
 
 def init_db():
     global ENGINE
     global SESSION
     if ENGINE is None:
-        ENGINE = create_engine('postgresql+psycopg2://{db_user}:{db_pass}@localhost:5432/{db_name}'.format(
-            db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name), pool_size=config.db_pool_size, max_overflow=0)
+        ENGINE = create_engine(config.sqlalchemy_url, pool_size=config.db_pool_size, max_overflow=0)
 
 def create_database():
     """Create database by executing db_create.sql"""
@@ -40,6 +45,21 @@ def create_database():
     with open(db_create_sql_path, 'r') as fd:
         sql_create_commands = fd.read()
         ENGINE.execute(sql_create_commands)
+
+def upgrade_database():
+    alembic_cfg = AlembicConfig(ALEMBIC_CONFIG)
+    alembic_command.upgrade(alembic_cfg, "head")
+
+def get_head_revision():
+    alembic_cfg = AlembicConfig(ALEMBIC_CONFIG)
+    script = AlembicScriptDirectory.from_config(alembic_cfg)
+    head_revision = script.get_current_head()
+    return head_revision
+
+def get_current_revision():
+    alembic_context = AlembicMigrationContext.configure(ENGINE.connect())
+    current_revision = alembic_context.get_current_revision()
+    return current_revision
 
 def execute_query(query):
     '''

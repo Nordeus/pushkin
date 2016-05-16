@@ -28,6 +28,7 @@ def init(configuration_file):
     global db_user
     global db_pass
     global db_pool_size
+    global sqlalchemy_url
     global config
     global game
     global world_id
@@ -93,6 +94,8 @@ def init(configuration_file):
     db_user = config.get(DATABASE_CONFIG_SECTION, 'db_user')
     db_pass = config.get(DATABASE_CONFIG_SECTION, 'db_pass')
     db_pool_size = int(config.get(DATABASE_CONFIG_SECTION, 'db_pool_size'))
+    sqlalchemy_url = 'postgresql+psycopg2://{db_user}:{db_pass}@localhost:5432/{db_name}'.\
+        format(db_user=db_user, db_pass=db_pass, db_name=db_name)
 
     #Handler URLs
     proto_event_handler_url = config.get(REQUEST_HANDLER_SECTION, 'proto_event_handler_url')
