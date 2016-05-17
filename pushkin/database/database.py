@@ -45,6 +45,7 @@ def create_database():
     with open(db_create_sql_path, 'r') as fd:
         sql_create_commands = fd.read()
         ENGINE.execute(sql_create_commands)
+        ENGINE.execute(text("INSERT INTO alembic_version VALUES (:version_num)"), {"version_num": get_head_revision()})
 
 def upgrade_database():
     alembic_cfg = AlembicConfig(ALEMBIC_CONFIG)
