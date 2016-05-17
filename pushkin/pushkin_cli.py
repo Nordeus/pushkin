@@ -24,7 +24,6 @@ from pushkin import config
 
 CONFIGURATION_FILENAME = None
 def init():
-    context.setup_configuration(CONFIGURATION_FILENAME)
     database.init_db()
 
     current_revision = database.get_current_revision()
@@ -103,6 +102,7 @@ def main():
     absolute_configuration_path = os.path.abspath(args.configuration_filename)
 
     CONFIGURATION_FILENAME = absolute_configuration_path
+    context.setup_configuration(CONFIGURATION_FILENAME)
 
     if args.upgrade_db:
         database.upgrade_database()
