@@ -198,7 +198,7 @@ def test_login_and_then_other_event(setup, mocker):
 
     # test parameter from event
     params = {'title_param': 'param title', 'text_param': 'param content'}
-    event2 = EventRequestSingle(user_id=1, event_id=3, pairs=params, timestamp=1442502890000)
+    event2 = EventRequestSingle(user_id=1, event_id=3, pairs=params, timestamp=2442502890000)
     event_request_other2 = EventRequestBatch([event2])
     messages2 = event_request_other2.build_messages()
     assert len(messages2) == 1
