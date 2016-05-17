@@ -123,7 +123,8 @@ class EventToMessagesHandler(EventHandler):
                                 login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
                                 content=localized_message.message_text.format(**text_parameter_map),
                                 screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
-                                dry_run=config.dry_run, message_id=message_id
+                                dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.ts_bigint,
+                                expiry_millis=localized_message.message.expiry_millis
                             )
                         )
                     else:
