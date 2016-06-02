@@ -1,4 +1,14 @@
 #!/usr/bin/env python2
+'''
+The MIT License (MIT)
+Copyright (c) 2016 Nordeus LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
 import argparse
 import tornado.httpserver
 import tornado.ioloop
@@ -24,8 +34,14 @@ from pushkin import config
 
 CONFIGURATION_FILENAME = None
 def init():
-    context.setup_configuration(CONFIGURATION_FILENAME)
     database.init_db()
+
+    current_revision = database.get_current_revision()
+    head_revision = database.get_head_revision()
+    if head_revision != current_revision:
+        print("Database is not up to date! "
+              "To upgrade database run pushkin --configuration {cfg} --upgrade-db".format(cfg=CONFIGURATION_FILENAME))
+        sys.exit(1)
 
     context.log_queue = multiprocessing.Queue()
     context.request_processor = RequestProcessor()
@@ -90,17 +106,16 @@ def main():
 
     parser = argparse.ArgumentParser(description='Service for sending push notifications')
     parser.add_argument('--configuration', dest='configuration_filename', required=True, help='Configuration file')
-    parser.add_argument('--init-db', help='Initialize database', action='store_true')
+    parser.add_argument('--upgrade-db', help='Upgrade database', action='store_true')
 
     args = parser.parse_args()
     absolute_configuration_path = os.path.abspath(args.configuration_filename)
 
     CONFIGURATION_FILENAME = absolute_configuration_path
+    context.setup_configuration(CONFIGURATION_FILENAME)
 
-    if args.init_db:
-        context.setup_configuration(CONFIGURATION_FILENAME)
-        database.init_db()
-        database.create_database()
+    if args.upgrade_db:
+        database.upgrade_database()
     else:
         run()
 

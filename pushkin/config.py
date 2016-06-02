@@ -1,3 +1,13 @@
+'''
+The MIT License (MIT)
+Copyright (c) 2016 Nordeus LLC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+'''
 import ConfigParser
 import logging
 import os
@@ -28,6 +38,7 @@ def init(configuration_file):
     global db_user
     global db_pass
     global db_pool_size
+    global sqlalchemy_url
     global config
     global game
     global world_id
@@ -93,6 +104,8 @@ def init(configuration_file):
     db_user = config.get(DATABASE_CONFIG_SECTION, 'db_user')
     db_pass = config.get(DATABASE_CONFIG_SECTION, 'db_pass')
     db_pool_size = int(config.get(DATABASE_CONFIG_SECTION, 'db_pool_size'))
+    sqlalchemy_url = 'postgresql+psycopg2://{db_user}:{db_pass}@localhost:5432/{db_name}'.\
+        format(db_user=db_user, db_pass=db_pass, db_name=db_name)
 
     #Handler URLs
     proto_event_handler_url = config.get(REQUEST_HANDLER_SECTION, 'proto_event_handler_url')

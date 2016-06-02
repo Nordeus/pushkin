@@ -51,7 +51,8 @@ setup(
         'psycopg2>=2.6',
         'python-daemon>=2.0.6',
         'requests>=2.9.1',
-        'sqlalchemy>=1.0.12'
+        'sqlalchemy>=1.0.12',
+        'alembic>=0.8.6'
         ],
     package_data = {
         '': ['*.sql', '*.sh', '*.ini']

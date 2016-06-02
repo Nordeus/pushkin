@@ -108,8 +108,9 @@ To start Pushkin you will need config.ini file. You can find example on [GitHub]
 
 If you are starting Pushkin for the first time you should initialize the database which you created in *Step 2* with the following command:
 ```bash
-pushkin --configuration config.ini --init-db
+pushkin --configuration config.ini --upgrade-db
 ```
+It is recommended that you also run this command every time you update Pushkin, since it could happen that database is changed.
 
 Now you can start Pushkin:
 ```bash

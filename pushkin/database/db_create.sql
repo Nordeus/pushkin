@@ -1,5 +1,10 @@
 BEGIN;
 
+DROP TABLE IF EXISTS "alembic_version" CASCADE;
+CREATE TABLE "alembic_version" (
+	version_num VARCHAR(32) NOT NULL
+);
+
 DROP TABLE IF EXISTS "login" CASCADE;
 CREATE TABLE "login" (
 	"id" int8 NOT NULL,
