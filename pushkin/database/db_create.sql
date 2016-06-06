@@ -42,6 +42,7 @@ CREATE TABLE "message" (
 	"cooldown_ts" int8,
 	"trigger_event_id" int4,
 	"screen" text NOT NULL DEFAULT '',
+	"expiry_millis" int8,
 	PRIMARY KEY ("id"),
 	CONSTRAINT "c_message_unique_name" UNIQUE("name")
 );

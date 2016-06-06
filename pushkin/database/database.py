@@ -104,10 +104,15 @@ def get_device_tokens(login_id):
     return result
 
 
-def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, message_id=0):
+def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, message_id=0, event_ts_bigint=None,
+                     expiry_millis=None):
     '''
     Get message dictionaries for a login id and message params.
     '''
+    if expiry_millis is not None and event_ts_bigint is not None:
+        time_to_live_ts_bigint = event_ts_bigint + expiry_millis
+    else:
+        time_to_live_ts_bigint = int(round(time.time() * 1000)) + constants.TIME_TO_LIVE_HOURS * 60 * 60 * 1000
     raw_messages = []
     base_notification = {
         'login_id': login_id,
@@ -117,7 +122,7 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
         'world_id': world_id,
         'screen': screen,
         'time': int(round(time.time() * 1000)),
-        'time_to_live_ts_bigint': int(round(time.time() * 1000)) + constants.TIME_TO_LIVE_HOURS * 60 * 60 * 1000,
+        'time_to_live_ts_bigint': time_to_live_ts_bigint,
         'status': constants.NOTIFICATION_READY,
         'message_id': message_id,
         'campaign_id': 0,
@@ -286,7 +291,7 @@ def get_localized_message(login_id, message_id):
     session.close()
     return localized_message
 
-def upsert_message(message_name, cooldown_ts, trigger_event_id, screen):
+def upsert_message(message_name, cooldown_ts, trigger_event_id, screen, expiry_millis):
     '''
     Add or update a message. Returns new or updated message.
     '''
@@ -296,8 +301,10 @@ def upsert_message(message_name, cooldown_ts, trigger_event_id, screen):
         message.cooldown_ts = cooldown_ts
         message.trigger_event_id = trigger_event_id
         message.screen = screen
+        message.expiry_millis = expiry_millis
     else:
-        message = model.Message(name=message_name, cooldown_ts=cooldown_ts, trigger_event_id=trigger_event_id, screen=screen)
+        message = model.Message(name=message_name, cooldown_ts=cooldown_ts, trigger_event_id=trigger_event_id,
+                                screen=screen, expiry_millis=expiry_millis)
         session.add(message)
     session.commit()
     session.refresh(message)
@@ -328,11 +335,11 @@ def upsert_message_localization(message_name, language_id, message_title, messag
     return message_localization
 
 def add_message(message_name, language_id, message_title, message_text, trigger_event_id=None, cooldown_ts=None,
-                screen=''):
+                screen='', expiry_millis=None):
     '''
     Add or update a message with localization for one language.
     '''
-    message = upsert_message(message_name, cooldown_ts, trigger_event_id, screen)
+    message = upsert_message(message_name, cooldown_ts, trigger_event_id, screen, expiry_millis)
     message_localization = upsert_message_localization(message_name, language_id, message_title, message_text)
     return message_localization
 

@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 '''
 import pytest
 from pushkin.database import database
-import datetime
+import datetime, time
 from pushkin import context
 
 from pushkin import test_config_ini_path
@@ -117,3 +117,22 @@ def test_unregistered_device(setup_database):
 
     database.update_unregistered_devices([{'login_id': device.login_id, 'device_token': device.device_token}])
     assert len(database.get_device_tokens(12345)) == 0
+
+def test_ttl(setup_database):
+    user_id = 12345
+    event_ts_bigint = int(round(time.time() * 1000))
+    expiry_millis = 60000
+    login = database.upsert_login(user_id, 1)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
+                                    application_version=1001)
+    localized_message = database.add_message(message_name='test', language_id=1, message_title='title en',
+                                      message_text='text en', expiry_millis=expiry_millis)
+    raw_messages = database.get_raw_messages(
+                                login_id=user_id, title=localized_message.message_title,
+                                content=localized_message.message_text.format,
+                                screen=localized_message.message.screen, game='game', world_id=1,
+                                dry_run=True, message_id=localized_message.message_id, event_ts_bigint=event_ts_bigint,
+                                expiry_millis=localized_message.message.expiry_millis
+    )
+    assert raw_messages[0]['time_to_live_ts_bigint'] == event_ts_bigint + expiry_millis
+

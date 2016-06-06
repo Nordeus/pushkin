@@ -53,6 +53,7 @@ class Message(Base):
     name = Column(Text, nullable=False, unique=True)
     cooldown_ts = Column(BigInteger)
     trigger_event_id = Column(Integer)
+    expiry_millis = Column(BigInteger)
     screen = Column(Text, nullable=False, server_default=text("''::text"))
 
 

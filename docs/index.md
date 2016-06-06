@@ -186,6 +186,8 @@ Pushkin has two entities for working with notifications - **message** and **loca
 
 * `screen` - landing screen after opening notification (`str`, optional)
 
+* `expiry_millis` - maximum interval in milliseconds to wait for delivering notification, when device is offline (`int`, optional)
+
 * `localizations` - list of localizations of a message
 
 
@@ -311,7 +313,7 @@ If translation for the language of a user doesn't exist English translation is g
 
 * Add or update a message. Returns new or updated message.
 ```python
-upsert_message(message_name, cooldown_ts, trigger_event_id, screen)
+upsert_message(message_name, cooldown_ts, trigger_event_id, screen, expiry_millis)
 ```
 
 * Add or update message localization.
@@ -321,7 +323,7 @@ upsert_message_localization(message_name, language_id, message_title, message_te
 
 * Add or update a message localization. Returns new or updated localization with relation to message preloaded.
 ```python
-add_message(message_name, language_id, message_title, message_text, trigger_event_id=None, cooldown_ts=None, screen='')
+add_message(message_name, language_id, message_title, message_text, trigger_event_id=None, cooldown_ts=None, screen='', expiry_millis=None)
 ```
 
 * Get the list of all messages from database.
