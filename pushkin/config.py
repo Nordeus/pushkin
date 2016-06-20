@@ -57,6 +57,8 @@ def init(configuration_file):
     global main_log_file_path
     global notification_log_path
     global notification_log_file_path
+    global notification_log_when_to_rotate
+    global notification_log_rotate_suffix
     global keep_log_days
     global main_logger_name
     global notifications_logger_name
@@ -82,6 +84,8 @@ def init(configuration_file):
     main_log_file_path = os.path.join(main_log_path, 'pushkin.log')
     notification_log_path = config.get(LOG_CONFIG_SECTION, 'notification_log_path')
     notification_log_file_path = notification_log_path + 'notifications.csv'
+    notification_log_when_to_rotate = config.get(LOG_CONFIG_SECTION, 'notification_log_when_to_rotate')
+    notification_log_rotate_suffix = config.get(LOG_CONFIG_SECTION, 'notification_log_rotate_suffix')
     keep_log_days = config.getint(LOG_CONFIG_SECTION, 'keep_log_days')
     main_logger_name = config.get(LOG_CONFIG_SECTION, 'main_logger_name')
     notifications_logger_name = config.get(LOG_CONFIG_SECTION, 'notifications_logger_name')
