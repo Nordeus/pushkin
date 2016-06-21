@@ -24,13 +24,12 @@ metadata = Base.metadata
 class Device(Base):
     __tablename__ = 'device'
     __table_args__ = (
-        UniqueConstraint('login_id', 'platform_id', 'device_id'),
+        UniqueConstraint('login_id', 'platform_id', 'device_token'),
     )
 
     id = Column(Integer, primary_key=True, server_default=text("nextval('device_id_seq'::regclass)"))
     login_id = Column(ForeignKey('login.id', ondelete='CASCADE'), nullable=False, index=True)
     platform_id = Column(SmallInteger, nullable=False)
-    device_id = Column(Text, nullable=False)
     device_token = Column(Text, nullable=False)
     device_token_new = Column(Text)
     application_version = Column(Integer)

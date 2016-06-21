@@ -24,25 +24,16 @@ def setup_database():
 
 
 def test_devices(setup_database):
-    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_id='qwe', device_token='123',
-                                application_version=1007)
+    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_token='123', application_version=1007)
     assert list(database.get_device_tokens(login_id=12345)) == [(1, '123')]
-    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_id=None, device_token='123',
-                                application_version=1007)
-    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_id='qwe', device_token=None,
-                                application_version=1007)
-    assert list(database.get_device_tokens(login_id=12345)) == [(1, '123')]
-    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_id='qwe', device_token='124',
-                                application_version=1007)
-    assert list(database.get_device_tokens(login_id=12345)) == [(1, '124')]
-    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_id='qwr', device_token='125',
-                                application_version=1007)
-    assert list(database.get_device_tokens(login_id=12345)) == [(1, '124'), (1, '125')]
+    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_token='124', application_version=1007)
+    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_token='125', application_version=1007)
+    assert list(database.get_device_tokens(login_id=12345)) == [(1, '123'), (1, '124'), (1, '125')]
 
 
 def test_message(setup_database):
     # user using serbian language
-    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_id='qwe', device_token='123',
+    database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_token='123',
                                 application_version=1007)
 
     # message with english only translation
@@ -94,13 +85,12 @@ def test_user(setup_database):
     assert login.language_id == reloaded_login.language_id
 
 
-    device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='123',
                                     application_version=1001, unregistered_ts=datetime.datetime.now())
     reloaded_devices = database.get_devices(login)
     assert device.id == reloaded_devices[0].id
     assert device.login_id == reloaded_devices[0].login_id
     assert device.platform_id == reloaded_devices[0].platform_id
-    assert device.device_id == reloaded_devices[0].device_id
     assert device.device_token == reloaded_devices[0].device_token
 
     database.delete_device(device)
@@ -111,20 +101,47 @@ def test_user(setup_database):
 
 def test_unregistered_device(setup_database):
     login = database.upsert_login(12345, 7)
-    device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
-                                    application_version=1001)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='123', application_version=1001)
     assert len(database.get_device_tokens(12345)) == 1
 
     database.update_unregistered_devices([{'login_id': device.login_id, 'device_token': device.device_token}])
     assert len(database.get_device_tokens(12345)) == 0
+
+def test_canonical(setup_database):
+    login = database.upsert_login(12345, 7)
+    old_token = '123'
+    new_token = '124'
+    database.upsert_device(login_id=login.id, platform_id=1, device_token=old_token, application_version=1001)
+    canonical_data = [{'login_id': login.id, 'old_token': old_token, 'new_token': new_token}]
+    database.update_canonicals(canonical_data)
+    assert list(database.get_device_tokens(login_id=login.id)) == [(1, new_token)]
+
+def test_device_overflow(setup_database):
+    login_id = 12345
+    database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='123', application_version=1007)
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '123')]
+    database.update_canonicals([{'login_id': login_id, 'old_token': '123', 'new_token': '124'}])
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '124')]
+    database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='125', application_version=1007)
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '124'), (1, '125')]
+    database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='126', application_version=1007)
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '124'), (1, '125'), (1, '126')]
+    database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='127', application_version=1007)
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '125'), (1, '126'), (1, '127')]
+    database.update_unregistered_devices([{'login_id': login_id, 'device_token': '126'}])
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '125'), (1, '127')]
+    database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='128', application_version=1007)
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '125'), (1, '127'), (1, '128')]
+    database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='129', application_version=1007)
+    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '127'), (1, '128'), (1, '129')]
+
 
 def test_ttl(setup_database):
     user_id = 12345
     event_ts_bigint = int(round(time.time() * 1000))
     expiry_millis = 60000
     login = database.upsert_login(user_id, 1)
-    device = database.upsert_device(login_id=login.id, platform_id=1, device_id='qwe', device_token='123',
-                                    application_version=1001)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='123', application_version=1001)
     localized_message = database.add_message(message_name='test', language_id=1, message_title='title en',
                                       message_text='text en', expiry_millis=expiry_millis)
     raw_messages = database.get_raw_messages(

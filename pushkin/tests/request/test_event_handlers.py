@@ -52,9 +52,6 @@ def test_valid_login_proto(mock_log):
     pair.key = 'platformId'
     pair.value = '1'
     pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = '123'
-    pair = event_proto.pairs.add()
     pair.key = 'deviceToken'
     pair.value = '1234'
     pair = event_proto.pairs.add()
@@ -68,9 +65,6 @@ def test_valid_login_proto(mock_log):
 def test_login_proto_without_platform_id(mock_log):
     '''Test that a login proto without platform id fails validation.'''
     event_proto = EventMessage_pb2.Event()
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = '123'
     pair = event_proto.pairs.add()
     pair.key = 'deviceToken'
     pair.value = '1234'
@@ -89,9 +83,6 @@ def test_login_proto_empty_platform_id(mock_log):
     pair.key = 'platformId'
     pair.value = ''
     pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = '123'
-    pair = event_proto.pairs.add()
     pair.key = 'deviceToken'
     pair.value = '1234'
     pair = event_proto.pairs.add()
@@ -109,9 +100,6 @@ def test_login_proto_non_numeric_platform_id(mock_log):
     pair.key = 'platformId'
     pair.value = 'asd'
     pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = '123'
-    pair = event_proto.pairs.add()
     pair.key = 'deviceToken'
     pair.value = '1234'
     pair = event_proto.pairs.add()
@@ -122,52 +110,12 @@ def test_login_proto_non_numeric_platform_id(mock_log):
     assert not LoginEventHandler().validate(event, params)
 
 
-def test_login_proto_without_device_id(mock_log):
-    '''Test that a login proto without device id fails validation.'''
-    event_proto = EventMessage_pb2.Event()
-    pair = event_proto.pairs.add()
-    pair.key = 'platformId'
-    pair.value = '1'
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceToken'
-    pair.value = '1234'
-    pair = event_proto.pairs.add()
-    pair.key = 'applicationVersion'
-    pair.value = '1'
-    params = dict((pair.key, pair.value) for pair in event_proto.pairs)
-    event = EventRequestSingle(123, config.login_event_id, params, 12345)
-    assert LoginEventHandler().validate(event, params)
-
-
-def test_login_proto_empty_device_id(mock_log):
-    '''Test that a login proto with empty device id fails validation.'''
-    event_proto = EventMessage_pb2.Event()
-    pair = event_proto.pairs.add()
-    pair.key = 'platformId'
-    pair.value = '1'
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = ''
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceToken'
-    pair.value = '1234'
-    pair = event_proto.pairs.add()
-    pair.key = 'applicationVersion'
-    pair.value = '1'
-    params = dict((pair.key, pair.value) for pair in event_proto.pairs)
-    event = EventRequestSingle(123, config.login_event_id, params, 12345)
-    assert LoginEventHandler().validate(event, params)
-
-
 def test_login_proto_without_device_token(mock_log):
     '''Test that a login proto without device token fails validation.'''
     event_proto = EventMessage_pb2.Event()
     pair = event_proto.pairs.add()
     pair.key = 'platformId'
     pair.value = '1'
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = '123'
     pair = event_proto.pairs.add()
     pair.key = 'applicationVersion'
     pair.value = '1'
@@ -182,9 +130,6 @@ def test_login_proto_empty_device_token(mock_log):
     pair = event_proto.pairs.add()
     pair.key = 'platformId'
     pair.value = '1'
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = '123'
     pair = event_proto.pairs.add()
     pair.key = 'deviceToken'
     pair.value = ''

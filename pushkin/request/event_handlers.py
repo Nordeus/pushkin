@@ -58,7 +58,7 @@ class LoginEventHandler(EventHandler):
 
     def handle_event(self, event, event_params):
         database.process_user_login(login_id=event.user_id, language_id=event_params.get('languageId'),
-                                    platform_id=event_params['platformId'], device_id=event_params.get('deviceId'),
+                                    platform_id=event_params['platformId'],
                                     device_token=event_params.get('deviceToken'),
                                     application_version=event_params['applicationVersion'])
         return []
