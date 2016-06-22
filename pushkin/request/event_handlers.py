@@ -13,6 +13,7 @@ import re
 from pushkin.database import database
 from pushkin import context
 from pushkin import config
+from pushkin.util.tools import is_integer
 
 """A place for handling events. Currently only login event is handled, this should be dinamycally configured in future."""
 
@@ -28,6 +29,7 @@ class EventHandlerManager():
 
     def _build(self):
         self._add_event_handler(LoginEventHandler())
+        self._add_event_handler(TurnOffNotificationEventHandler())
         event_to_message_mapping = database.get_event_to_message_mapping()
         for event_id, message_ids in event_to_message_mapping.iteritems():
             self._add_event_handler(EventToMessagesHandler(event_id, message_ids))
@@ -64,18 +66,34 @@ class LoginEventHandler(EventHandler):
         return []
 
     def validate(self, event, event_params):
-        def is_integer(value):
-            try:
-                int(value)
-                return True
-            except ValueError:
-                return False
-
         result = EventHandler.validate(self, event, event_params)
         result &= is_integer(event_params.get('platformId', ''))
         result &= is_integer(event_params.get('applicationVersion', ''))
         return result
 
+class TurnOffNotificationEventHandler(EventHandler):
+    """ Writes data about notifications that user doesn't want to receive into database """
+
+    def __init__(self):
+        EventHandler.__init__(self, config.turn_off_notification_event_id)
+
+    def handle_event(self, event, event_params):
+        blacklist = set()
+
+        for _, value in event_params.iteritems():
+            blacklist.add(value)
+
+        database.upsert_message_blacklist(event.user_id, list(blacklist))
+        context.message_blacklist[event.user_id] = blacklist
+
+        return []
+
+    def validate(self, event, event_params):
+        result = EventHandler.validate(self, event, event_params)
+        for _, value in event_params.iteritems():
+            result &= is_integer(value)
+
+        return result
 
 PARAM_REGEX = re.compile("\{[a-zA-Z0-9_]+\}")
 
@@ -112,26 +130,27 @@ class EventToMessagesHandler(EventHandler):
         raw_messages = []
         if self.event_id == event.event_id:
             for message_id in self.message_ids:
-                try:
-                    localized_message = database.get_localized_message(event.user_id, message_id)
+                if message_id not in context.message_blacklist.get(event.user_id, set()):
+                    try:
+                        localized_message = database.get_localized_message(event.user_id, message_id)
 
-                    if localized_message is not None:
-                        text_parameter_map = get_parameter_map(localized_message.message_text)
-                        title_parameter_map = get_parameter_map(localized_message.message_title)
-                        raw_messages.extend(
-                            database.get_raw_messages(
-                                login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
-                                content=localized_message.message_text.format(**text_parameter_map),
-                                screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
-                                dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.timestamp,
-                                expiry_millis=localized_message.message.expiry_millis
+                        if localized_message is not None:
+                            text_parameter_map = get_parameter_map(localized_message.message_text)
+                            title_parameter_map = get_parameter_map(localized_message.message_title)
+                            raw_messages.extend(
+                                database.get_raw_messages(
+                                    login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
+                                    content=localized_message.message_text.format(**text_parameter_map),
+                                    screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
+                                    dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.timestamp,
+                                    expiry_millis=localized_message.message.expiry_millis
+                                )
                             )
-                        )
-                    else:
-                        context.main_logger.debug("Cannot get localization for user {login_id}".format(login_id=event.user_id))
-                except:
-                    context.main_logger.exception(
-                        'Problem with preparing message (message_id={message_id})'.format(message_id=message_id))
+                        else:
+                            context.main_logger.debug("Cannot get localization for user {login_id}".format(login_id=event.user_id))
+                    except:
+                        context.main_logger.exception(
+                            'Problem with preparing message (message_id={message_id})'.format(message_id=message_id))
         else:
             context.main_logger.error('EventToMessagesHandler can handle event_id {handled_id} but got {passed_id}'
                                       .format(handled_id=self.event_id, passed_id=event.event_id))

@@ -6,6 +6,7 @@ from pushkin.protobuf import PushNotificationMessage_pb2
 from pushkin import context
 from pushkin.database import database
 from pushkin.request.request_processor import RequestProcessor
+from pushkin.sender.sender_manager import NotificationSenderManager
 from pushkin.requesthandlers.events import ProtoEventHandler
 from pushkin.requesthandlers.notifications import ProtoNotificationHandler
 from pushkin import test_config_ini_path
@@ -22,6 +23,7 @@ def mock_processor(mocker):
     '''Mock request processor'''
     mocker.patch('pushkin.request.request_processor.RequestProcessor.submit')
     mocker.patch('pushkin.context.main_logger')
+    mocker.patch('pushkin.sender.sender_manager.NotificationSenderManager.submit')
 
 
 @pytest.fixture
@@ -151,6 +153,20 @@ def test_post_event(setup_database, mock_processor, http_client, post_event_url,
     response = yield http_client.fetch(request)
     assert response.code == 200
     assert context.request_processor.submit.called
+
+
+@pytest.mark.gen_test
+def test_message_blacklist(setup_database, mock_processor, http_client, post_event_url, event_batch_proto):
+    '''Test that a valid request is succesfully parsed in post_event'''
+    context.request_processor.submit.return_value = True
+
+    login = database.upsert_login(123, 7)
+    database.upsert_message_blacklist(123, [1])
+    context.request_processor.submit.return_value = True
+    request = tornado.httpclient.HTTPRequest(post_event_url, method='POST', body=event_batch_proto)
+    response = yield http_client.fetch(request)
+    assert not context.request_processor.sender_manager.submit.called
+    database.upsert_message_blacklist(123, [100])
 
 
 @pytest.mark.gen_test

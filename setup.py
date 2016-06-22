@@ -55,7 +55,7 @@ setup(
         'alembic>=0.8.6'
         ],
     package_data = {
-        '': ['*.sql', '*.sh', '*.ini']
+        '': ['*.sql', '*.sh', '*.ini', '*.mako']
     },
 
     entry_points={

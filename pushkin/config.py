@@ -52,6 +52,7 @@ def init(configuration_file):
     global dry_run
     global request_processor_num_threads
     global login_event_id
+    global turn_off_notification_event_id
     global main_log_path
     global main_log_level
     global main_log_file_path
@@ -98,6 +99,7 @@ def init(configuration_file):
 
     # events
     login_event_id = config.getint(EVENT_CONFIG_SECTION, 'login_event_id')
+    turn_off_notification_event_id = config.getint(EVENT_CONFIG_SECTION, 'turn_off_notification_event_id')
 
     # database
     db_name = config.get(DATABASE_CONFIG_SECTION, 'db_name')

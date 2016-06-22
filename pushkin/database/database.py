@@ -184,6 +184,9 @@ def process_user_login(login_id, language_id, platform_id, device_id, device_tok
     session.commit()
     session.close()
 
+def process_turn_off_notification():
+    pass
+
 def upsert_login(login_id, language_id):
     '''
     Add or update a login entity. Returns new or updated login.
@@ -234,6 +237,31 @@ def get_all_logins():
     logins = session.query(model.Login).all()
     session.close()
     return logins
+
+def get_all_message_blacklist():
+    '''
+    Get list of all message blacklists
+    '''
+    session = get_session()
+    blacklists = session.query(model.MessageBlacklist).all()
+    session.close()
+    return blacklists
+
+def upsert_message_blacklist(login_id, blacklist):
+    '''
+    Add or update a message. Returns new or updated message.
+    '''
+    session = get_session()
+    entity = session.query(model.MessageBlacklist).filter(model.MessageBlacklist.login_id == login_id).one_or_none()
+    if entity is not None:
+        entity.blacklist = blacklist
+    else:
+        entity = model.MessageBlacklist(login_id=login_id, blacklist=blacklist)
+        session.add(entity)
+    session.commit()
+    session.refresh(entity)
+    session.close()
+    return entity
 
 def get_login(login_id):
     '''

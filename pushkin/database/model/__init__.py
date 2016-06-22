@@ -15,6 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, SmallInteger, Text, UniqueConstraint, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects import postgresql
 
 
 Base = declarative_base()
@@ -56,6 +57,12 @@ class Message(Base):
     expiry_millis = Column(BigInteger)
     screen = Column(Text, nullable=False, server_default=text("''::text"))
 
+class MessageBlacklist(Base):
+    __tablename__ = 'message_blacklist'
+
+    id = Column(Integer, primary_key=True, server_default=text("nextval('message_blacklist_id_seq'::regclass)"))
+    login_id = Column(ForeignKey('login.id', ondelete='CASCADE'), nullable=False, index=True)
+    blacklist = Column(postgresql.ARRAY(Integer))
 
 class MessageLocalization(Base):
     __tablename__ = 'message_localization'

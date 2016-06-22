@@ -46,6 +46,7 @@ def init():
     context.log_queue = multiprocessing.Queue()
     context.request_processor = RequestProcessor()
     context.event_handler_manager = EventHandlerManager()
+    context.message_blacklist = {row.login_id:set(row.blacklist) for row in database.get_all_message_blacklist()}
 
 
 def create_app():

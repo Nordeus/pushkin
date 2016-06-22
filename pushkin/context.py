@@ -19,6 +19,7 @@ log_queue = None
 PERSIST_LOGGER_PREFFIX = 'persist_'
 main_logger = None
 notification_logger = None
+message_blacklist = None
 
 """This module is used as a holder for global state in server process"""
 
