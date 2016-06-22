@@ -166,7 +166,6 @@ def test_message_blacklist(setup_database, mock_processor, http_client, post_eve
     request = tornado.httpclient.HTTPRequest(post_event_url, method='POST', body=event_batch_proto)
     response = yield http_client.fetch(request)
     assert not context.request_processor.sender_manager.submit.called
-    database.upsert_message_blacklist(123, [100])
 
 
 @pytest.mark.gen_test

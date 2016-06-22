@@ -184,9 +184,6 @@ def process_user_login(login_id, language_id, platform_id, device_id, device_tok
     session.commit()
     session.close()
 
-def process_turn_off_notification():
-    pass
-
 def upsert_login(login_id, language_id):
     '''
     Add or update a login entity. Returns new or updated login.
