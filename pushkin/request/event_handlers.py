@@ -120,8 +120,8 @@ class EventToMessagesHandler(EventHandler):
                         title_parameter_map = get_parameter_map(localized_message.message_title)
                         raw_messages.extend(
                             database.get_raw_messages(
-                                login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
-                                content=localized_message.message_text.format(**text_parameter_map),
+                                login_id=event.user_id, title=localized_message.message_title.encode('utf-8').format(**title_parameter_map).decode('utf-8'),
+                                content=localized_message.message_text.encode('utf-8').format(**text_parameter_map).decode('utf-8'),
                                 screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
                                 dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.timestamp,
                                 expiry_millis=localized_message.message.expiry_millis
