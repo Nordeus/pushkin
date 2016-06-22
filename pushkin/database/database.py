@@ -143,7 +143,7 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
 
 def update_canonicals(canonicals):
     '''
-    Update cannonical data for android devices.
+    Update canonical data for android devices.
     '''
     global ENGINE
     binding = [{"p_{}".format(k): v for k, v in canonical.items()} for canonical in canonicals]
@@ -157,6 +157,8 @@ def update_canonicals(canonicals):
 def update_unregistered_devices(unregistered):
     '''
     Update data for unregistered Android devices.
+
+    Unregistered device will not receive notifications and will be deleted when number of devices exceeds maximum.
     '''
     global ENGINE
     binding = [{"p_{}".format(k): v for k, v in u.items()} for u in unregistered]
@@ -167,19 +169,19 @@ def update_unregistered_devices(unregistered):
                    func.coalesce(device_table.c.device_token_new, device_table.c.device_token) == bindparam('p_device_token')))
     ENGINE.execute(stmt, binding)
 
-def process_user_login(login_id, language_id, platform_id, device_id, device_token, application_version):
+def process_user_login(login_id, language_id, platform_id, device_token, application_version):
     '''
-    Add or update device and login data.
+    Add or update device and login data. Also deletes oldest device if number of devices exceeds maximum.
     '''
     session = get_session()
-    session.execute(text('SELECT process_user_login(:login_id, (:language_id)::int2, (:platform_id)::int2, :device_id, :device_token, :application_version)'),
+    session.execute(text('SELECT process_user_login(:login_id, (:language_id)::int2, (:platform_id)::int2,:device_token, :application_version, (:max_devices_per_user)::int2)'),
                     {
                     'login_id': login_id,
                     'language_id': language_id,
                     'platform_id': platform_id,
-                    'device_id': device_id,
                     'device_token': device_token,
                     'application_version': application_version,
+                    'max_devices_per_user': config.max_devices_per_user,
                     })
     session.commit()
     session.close()
@@ -200,7 +202,7 @@ def upsert_login(login_id, language_id):
     session.close()
     return login
 
-def upsert_device(login_id, platform_id, device_id, device_token, application_version, unregistered_ts=None):
+def upsert_device(login_id, platform_id, device_token, application_version, unregistered_ts=None):
     '''
     Add or update a device entity. Returns new or updated device with relation to login preloaded.
     '''
@@ -209,15 +211,13 @@ def upsert_device(login_id, platform_id, device_id, device_token, application_ve
     device = session.query(model.Device).\
         filter(model.Device.login == login).\
         filter(model.Device.platform_id == platform_id).\
-        filter(model.Device.device_id == device_id).\
+        filter(func.coalesce(model.Device.device_token_new, model.Device.device_token) == device_token).\
         one_or_none()
     if device is not None:
-        device.device_token = device_token
         device.application_version = application_version
         device.unregistered_ts = unregistered_ts
-        device.device_token_new = None
     else:
-        device = model.Device(login=login, platform_id=platform_id, device_id=device_id, device_token=device_token,
+        device = model.Device(login=login, platform_id=platform_id, device_token=device_token,
                               application_version=application_version, unregistered_ts=unregistered_ts)
         session.add(device)
     session.commit()

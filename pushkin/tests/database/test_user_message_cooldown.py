@@ -34,12 +34,9 @@ def setup(mock_log):
 
 def prepare_demodata():
     # add some test users
-    database.process_user_login(login_id=1, language_id=1, platform_id=2, device_id='did1', device_token='dtoken1',
-                                application_version=200)
-    database.process_user_login(login_id=2, language_id=1, platform_id=2, device_id='did2', device_token='dtoken2',
-                                application_version=200)
-    database.process_user_login(login_id=3, language_id=1, platform_id=2, device_id='did3', device_token='dtoken3',
-                                application_version=200)
+    database.process_user_login(login_id=1, language_id=1, platform_id=2, device_token='dtoken1', application_version=200)
+    database.process_user_login(login_id=2, language_id=1, platform_id=2, device_token='dtoken2', application_version=200)
+    database.process_user_login(login_id=3, language_id=1, platform_id=2, device_token='dtoken3', application_version=200)
 
     # insert messages with and without cooldown
     database.add_message(message_name='no_cooldown', language_id=1, message_title='title en', message_text='text en', trigger_event_id=1)
@@ -92,7 +89,6 @@ def test_cooldown_updates(setup):
 
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
     db = assert_db_consistent(result)
-    print "==========================stampaj bazuuuu ", db
     timestamp_insert_no_cd = db[0][3]
     timestamp_insert_big_cd = db[1][3]
     timestamp_insert_small_cd = db[2][3]

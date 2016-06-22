@@ -39,12 +39,9 @@ def setup(mock_log):
 
 def prepare_demodata():
     # add some test users
-    database.process_user_login(login_id=1, language_id=1, platform_id=2, device_id='did1', device_token='dtoken1',
-                                application_version=200)
-    database.process_user_login(login_id=2, language_id=1, platform_id=2, device_id='did2', device_token='dtoken2',
-                                application_version=200)
-    database.process_user_login(login_id=3, language_id=1, platform_id=2, device_id='did3', device_token='dtoken3',
-                                application_version=200)
+    database.process_user_login(login_id=1, language_id=1, platform_id=2, device_token='dtoken1', application_version=200)
+    database.process_user_login(login_id=2, language_id=1, platform_id=2, device_token='dtoken2', application_version=200)
+    database.process_user_login(login_id=3, language_id=1, platform_id=2, device_token='dtoken3', application_version=200)
 
     # insert messages
     database.add_message('msg1', 1, 'title', 'text', 1)
@@ -53,15 +50,12 @@ def prepare_demodata():
     database.add_message('msg4', 1, 'title {title_param}', 'text {text_param}', 3)
 
 
-def create_batch_with_login_event(user_id, platform_id, device_id, device_token):
+def create_batch_with_login_event(user_id, platform_id, device_token):
     event_proto = EventMessage_pb2.Event()
     # add required parameters
     pair = event_proto.pairs.add()
     pair.key = 'platformId'
     pair.value = str(platform_id)
-    pair = event_proto.pairs.add()
-    pair.key = 'deviceId'
-    pair.value = device_id
     pair = event_proto.pairs.add()
     pair.key = 'deviceToken'
     pair.value = device_token
@@ -76,8 +70,7 @@ def create_batch_with_login_event(user_id, platform_id, device_id, device_token)
 def test_login_event_persists_user_data(setup):
     '''Test that user data is persisted after login event is received'''
     context.event_handler_manager = EventHandlerManager()
-    event_batch = create_batch_with_login_event(user_id=1338, platform_id=2, device_id='str_device_id',
-                                                device_token='str_device_token')
+    event_batch = create_batch_with_login_event(user_id=1338, platform_id=2, device_token='str_device_token')
     event_request = EventRequestBatch([event_batch])
     event_request.process()
     device_tokens = list(database.get_device_tokens(1338))
@@ -87,8 +80,7 @@ def test_login_event_persists_user_data(setup):
 def test_login_event_duplicate(setup):
     '''Tests that user data is persisted correctly for duplicated login events'''
     context.event_handler_manager = EventHandlerManager()
-    event_batch = create_batch_with_login_event(user_id=1338, platform_id=1, device_id='str_device_id_1',
-                                                device_token='str_device_token_1')
+    event_batch = create_batch_with_login_event(user_id=1338, platform_id=1, device_token='str_device_token_1')
     event_request_platform1 = EventRequestBatch([event_batch])
     event_request_platform1.process()
     event_request_platform1.process()
@@ -100,13 +92,11 @@ def test_login_event_duplicate(setup):
 def test_login_event_more_platforms(setup):
     '''Tests that user data is persisted for more platforms'''
     context.event_handler_manager = EventHandlerManager()
-    event_batch_platform1 = create_batch_with_login_event(user_id=1338, platform_id=1, device_id='str_device_id_1',
-                                                          device_token='str_device_token_1')
+    event_batch_platform1 = create_batch_with_login_event(user_id=1338, platform_id=1, device_token='str_device_token_1')
     event_request_platform1 = EventRequestBatch([event_batch_platform1])
     event_request_platform1.process()
 
-    event_batch_platform2 = create_batch_with_login_event(user_id=1338, platform_id=2, device_id='str_device_id_2',
-                                                          device_token='str_device_token_2')
+    event_batch_platform2 = create_batch_with_login_event(user_id=1338, platform_id=2, device_token='str_device_token_2')
     event_request_platform2 = EventRequestBatch([event_batch_platform2])
     event_request_platform2.process()
 
@@ -117,13 +107,11 @@ def test_login_event_more_platforms(setup):
 def test_login_event_same_platform_different_device(setup):
     '''Tests that both devices are persisted if they have different tokens'''
     context.event_handler_manager = EventHandlerManager()
-    event_batch_platform1 = create_batch_with_login_event(user_id=1338, platform_id=1, device_id='str_device_id_1',
-                                                          device_token='str_device_token_1')
+    event_batch_platform1 = create_batch_with_login_event(user_id=1338, platform_id=1, device_token='str_device_token_1')
     event_request_platform1 = EventRequestBatch([event_batch_platform1])
     event_request_platform1.process()
 
-    event_batch_platform2 = create_batch_with_login_event(user_id=1338, platform_id=1, device_id='str_device_id_2',
-                                                          device_token='str_device_token_2')
+    event_batch_platform2 = create_batch_with_login_event(user_id=1338, platform_id=1, device_token='str_device_token_2')
     event_request_platform2 = EventRequestBatch([event_batch_platform2])
     event_request_platform2.process()
 
@@ -185,8 +173,7 @@ def test_login_and_then_other_event(setup, mocker):
     '''Tests that both devices are persisted if they have different tokens'''
     context.event_handler_manager = EventHandlerManager()
 
-    event_batch_platform1 = create_batch_with_login_event(user_id=1338, platform_id=1, device_id='str_device_id_1',
-                                                          device_token='str_device_token_1')
+    event_batch_platform1 = create_batch_with_login_event(user_id=1338, platform_id=1, device_token='str_device_token_1')
     event_request_platform1 = EventRequestBatch([event_batch_platform1])
     event_request_platform1.process()
 

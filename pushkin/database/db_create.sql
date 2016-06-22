@@ -17,13 +17,12 @@ CREATE TABLE "device" (
 	"id" serial NOT NULL,
 	"login_id" int8 NOT NULL,
 	"platform_id" int2 NOT NULL,
-	"device_id" text NOT NULL,
 	"device_token" text NOT NULL,
 	"device_token_new" text,
 	"application_version" int4,
 	"unregistered_ts" timestamp,
 	PRIMARY KEY("id"),
-	CONSTRAINT "c_device_unique_user_device" UNIQUE("login_id", "platform_id", "device_id")
+	CONSTRAINT "c_device_unique_user_device" UNIQUE("login_id", "platform_id", "device_token")
 );
 
 CREATE INDEX "idx_device_login_id" ON "device" ("login_id");
@@ -94,9 +93,9 @@ CREATE OR REPLACE FUNCTION "process_user_login" (
 	p_login_id int8,
 	p_language_id int2,
 	p_platform_id int2,
-	p_device_id text,
 	p_device_token text,
-	p_application_version int4
+	p_application_version int4,
+	p_max_devices_per_user int2
 )
 RETURNS "pg_catalog"."void" AS
 $body$
@@ -122,32 +121,46 @@ BEGIN
 		WHERE u.login_id = d.login_id);
 
 	WITH
-	data_tmp(login_id, platform_id, device_id, device_token, application_version) AS (
-		VALUES(p_login_id, p_platform_id, p_device_id, p_device_token, p_application_version)
+	data_tmp(login_id, platform_id, device_token, application_version) AS (
+		VALUES(p_login_id, p_platform_id, p_device_token, p_application_version)
 	),
 	data AS (
-		SELECT * FROM data_tmp WHERE device_id IS NOT NULL AND device_token IS NOT NULL
+		SELECT * FROM data_tmp WHERE device_token IS NOT NULL
 	),
 	update_part AS (
 		UPDATE device
-		SET device_token = d.device_token,
-			device_token_new = CASE WHEN device.device_token <> d.device_token THEN NULL ELSE device.device_token_new END,
-			application_version = d.application_version
+		SET application_version = d.application_version
 		FROM data d
-		WHERE device.device_id = d.device_id
+		WHERE device.device_token = d.device_token
 			AND device.login_id = d.login_id
 			AND device.platform_id = d.platform_id
 		RETURNING d.*
 	)
-	INSERT INTO device(login_id, platform_id, device_id, device_token, application_version)
-	SELECT d.login_id, d.platform_id, d.device_id, d.device_token, d.application_version
+	INSERT INTO device(login_id, platform_id, device_token, application_version)
+	SELECT d.login_id, d.platform_id, d.device_token, d.application_version
 	FROM data d
 	WHERE NOT EXISTS (
 		SELECT 1
 		FROM update_part u
 		WHERE u.login_id = d.login_id
 			AND u.platform_id = d.platform_id
-			AND u.device_id = d.device_id);
+			AND u.device_token = d.device_token);
+
+	WITH
+	devices_ordered AS (
+	SELECT
+		id,
+		ROW_NUMBER() OVER (PARTITION BY login_id ORDER BY unregistered_ts DESC NULLS FIRST, id DESC) AS device_order
+	FROM device
+	WHERE login_id = p_login_id
+	),
+	devices_to_delete AS (
+	SELECT *
+	FROM devices_ordered
+	WHERE device_order > p_max_devices_per_user
+	)
+	DELETE FROM device
+	WHERE id IN (SELECT id FROM devices_to_delete);
 
 END;
 $body$
