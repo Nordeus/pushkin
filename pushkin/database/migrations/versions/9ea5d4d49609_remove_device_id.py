@@ -79,7 +79,7 @@ BEGIN
 	devices_ordered AS (
 	SELECT
 		id,
-		ROW_NUMBER() OVER (PARTITION BY login_id ORDER BY unregistered_ts NULLS FIRST, id DESC) AS device_order
+		ROW_NUMBER() OVER (PARTITION BY login_id ORDER BY unregistered_ts DESC NULLS FIRST, id DESC) AS device_order
 	FROM device
 	WHERE login_id = p_login_id
 	),

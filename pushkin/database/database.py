@@ -143,7 +143,7 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
 
 def update_canonicals(canonicals):
     '''
-    Update cannonical data for android devices.
+    Update canonical data for android devices.
     '''
     global ENGINE
     binding = [{"p_{}".format(k): v for k, v in canonical.items()} for canonical in canonicals]
@@ -157,6 +157,8 @@ def update_canonicals(canonicals):
 def update_unregistered_devices(unregistered):
     '''
     Update data for unregistered Android devices.
+
+    Unregistered device will not receive notifications and will be deleted when number of devices exceeds maximum.
     '''
     global ENGINE
     binding = [{"p_{}".format(k): v for k, v in u.items()} for u in unregistered]
@@ -169,7 +171,7 @@ def update_unregistered_devices(unregistered):
 
 def process_user_login(login_id, language_id, platform_id, device_token, application_version):
     '''
-    Add or update device and login data.
+    Add or update device and login data. Also deletes oldest device if number of devices exceeds maximum.
     '''
     session = get_session()
     session.execute(text('SELECT process_user_login(:login_id, (:language_id)::int2, (:platform_id)::int2,:device_token, :application_version, (:max_devices_per_user)::int2)'),
