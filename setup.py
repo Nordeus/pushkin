@@ -12,7 +12,7 @@ any type of application. It supports both Android and iOS platforms.
 
 setup(
     name='pushkin',
-    version='0.1.4',
+    version='0.1.4b',
 
     description='Pushkin is a free open source tool for sending push notifications',
     long_description=long_description,
