@@ -603,6 +603,34 @@ JSON request
 }
 ```
 
+**Turn off notification (blacklist) event**
+
+Used to switch off sending of notifications for a certain user. Every event should is treated like a snapshot of blacklisted messages, there no updates, every new blacklist event overrides the one before it.
+
+* Event ID: 4002
+* Key/Value pairs definition:
+
+Pair values should be the message ids that should be blacklisted. The concrete values for keys in this case are not important.
+
+Example:
+
+JSON request
+```json
+{
+  "events": [
+    {
+      "user_id" : 1338,
+      "event_id" : 4002,
+      "timestamp" : 1458823448000,
+      "pairs": {
+        "blacklist1": 1,
+        "blacklist2": 2
+      }
+    }
+  ]
+}
+```
+
 **Event that triggers notification**
 
 Used to trigger notification for a specific user. It is required that Pushkin knows about a user, which means that it received Login event for that user before.
