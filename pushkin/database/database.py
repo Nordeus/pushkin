@@ -235,6 +235,31 @@ def get_all_logins():
     session.close()
     return logins
 
+def get_all_message_blacklist():
+    '''
+    Get list of all message blacklists
+    '''
+    session = get_session()
+    blacklists = session.query(model.MessageBlacklist).all()
+    session.close()
+    return blacklists
+
+def upsert_message_blacklist(login_id, blacklist):
+    '''
+    Add or update a message. Returns new or updated message.
+    '''
+    session = get_session()
+    entity = session.query(model.MessageBlacklist).filter(model.MessageBlacklist.login_id == login_id).one_or_none()
+    if entity is not None:
+        entity.blacklist = blacklist
+    else:
+        entity = model.MessageBlacklist(login_id=login_id, blacklist=blacklist)
+        session.add(entity)
+    session.commit()
+    session.refresh(entity)
+    session.close()
+    return entity
+
 def get_login(login_id):
     '''
     Get a specific login by id.

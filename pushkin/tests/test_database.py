@@ -78,6 +78,15 @@ def test_message(setup_database):
     database.delete_message(message_1.message)
     assert database.get_message('test') is None
 
+def test_message_blacklist(setup_database):
+    login = database.upsert_login(12345, 7)
+    blacklist = database.upsert_message_blacklist(12345, [7])
+    reloaded_blacklists = database.get_all_message_blacklist()
+    assert len(reloaded_blacklists) == 1
+
+    assert reloaded_blacklists[0].login_id == blacklist.login_id
+    assert reloaded_blacklists[0].blacklist == blacklist.blacklist
+
 def test_user(setup_database):
     login = database.upsert_login(12345, 7)
     reloaded_login = database.get_login(12345)

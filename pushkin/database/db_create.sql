@@ -46,6 +46,14 @@ CREATE TABLE "message" (
 	CONSTRAINT "c_message_unique_name" UNIQUE("name")
 );
 
+DROP TABLE IF EXISTS "message_blacklist" CASCADE;
+CREATE TABLE "message_blacklist" (
+    "id" serial NOT NULL,
+    "login_id" int8 NOT NULL,
+    "blacklist" int4[],
+    PRIMARY KEY ("id")
+);
+
 DROP TABLE IF EXISTS "message_localization" CASCADE;
 CREATE TABLE "message_localization" (
 	"id" serial NOT NULL,
@@ -75,6 +83,13 @@ CREATE TABLE "user_message_last_time_sent" (
 );
 
 ALTER TABLE "user_message_last_time_sent" ADD CONSTRAINT "ref_login_id_to_login" FOREIGN KEY ("login_id")
+	REFERENCES "login"("id")
+	MATCH SIMPLE
+	ON DELETE CASCADE
+	ON UPDATE NO ACTION
+	NOT DEFERRABLE;
+
+ALTER TABLE "message_blacklist" ADD CONSTRAINT "ref_message_blacklist_login_id_to_login" FOREIGN KEY ("login_id")
 	REFERENCES "login"("id")
 	MATCH SIMPLE
 	ON DELETE CASCADE
