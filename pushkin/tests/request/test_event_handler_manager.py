@@ -54,12 +54,9 @@ def setup(mock_log):
 
 def prepare_demodata():
     # add some test users
-    database.process_user_login(login_id=1, language_id=1, platform_id=2, device_id='did1', device_token='dtoken1',
-                                application_version=200)
-    database.process_user_login(login_id=2, language_id=1, platform_id=2, device_id='did2', device_token='dtoken2',
-                                application_version=200)
-    database.process_user_login(login_id=3, language_id=1, platform_id=2, device_id='did3', device_token='dtoken3',
-                                application_version=200)
+    database.process_user_login(login_id=1, language_id=1, platform_id=2, device_token='dtoken1', application_version=200)
+    database.process_user_login(login_id=2, language_id=1, platform_id=2, device_token='dtoken2', application_version=200)
+    database.process_user_login(login_id=3, language_id=1, platform_id=2, device_token='dtoken3', application_version=200)
 
     # insert messages
     database.add_message('msg1', 1, 'title', 'text', 1)

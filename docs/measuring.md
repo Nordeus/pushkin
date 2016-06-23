@@ -1,6 +1,6 @@
 # Measuring results
 
-Results of notifications can be tracked by analyzing CSV files from notification log directory (default location of log file is `/var/log/pushkin/notification/notification.csv` and it's rotated daily). We plan to create a dashboard with various settings and statistics.
+Results of notifications can be tracked by analyzing CSV files from notification log directory (default location of log file is `/var/log/pushkin/notification/notification.csv` and it's rotated hourly by default, which can be changed in config.ini). We plan to create a dashboard with various settings and statistics.
 
 CSV file has following columns:
 

@@ -38,6 +38,7 @@ def init(configuration_file):
     global db_user
     global db_pass
     global db_pool_size
+    global max_devices_per_user
     global sqlalchemy_url
     global config
     global game
@@ -58,6 +59,8 @@ def init(configuration_file):
     global main_log_file_path
     global notification_log_path
     global notification_log_file_path
+    global notification_log_when_to_rotate
+    global notification_log_rotate_suffix
     global keep_log_days
     global main_logger_name
     global notifications_logger_name
@@ -83,6 +86,8 @@ def init(configuration_file):
     main_log_file_path = os.path.join(main_log_path, 'pushkin.log')
     notification_log_path = config.get(LOG_CONFIG_SECTION, 'notification_log_path')
     notification_log_file_path = notification_log_path + 'notifications.csv'
+    notification_log_when_to_rotate = config.get(LOG_CONFIG_SECTION, 'notification_log_when_to_rotate')
+    notification_log_rotate_suffix = config.get(LOG_CONFIG_SECTION, 'notification_log_rotate_suffix')
     keep_log_days = config.getint(LOG_CONFIG_SECTION, 'keep_log_days')
     main_logger_name = config.get(LOG_CONFIG_SECTION, 'main_logger_name')
     notifications_logger_name = config.get(LOG_CONFIG_SECTION, 'notifications_logger_name')
@@ -106,6 +111,7 @@ def init(configuration_file):
     db_user = config.get(DATABASE_CONFIG_SECTION, 'db_user')
     db_pass = config.get(DATABASE_CONFIG_SECTION, 'db_pass')
     db_pool_size = int(config.get(DATABASE_CONFIG_SECTION, 'db_pool_size'))
+    max_devices_per_user = int(config.get(DATABASE_CONFIG_SECTION, 'max_devices_per_user'))
     sqlalchemy_url = 'postgresql+psycopg2://{db_user}:{db_pass}@localhost:5432/{db_name}'.\
         format(db_user=db_user, db_pass=db_pass, db_name=db_name)
 

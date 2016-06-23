@@ -229,8 +229,6 @@ Pushkin has two entities for working with user data - **login** and **device**. 
 	* Android Tablet = 6   
 	(`int`)
 
-* `device_id` - unique identifier of a device on his platform (`str`)
-
 * `device_token` - identifier of a device at push notification service (GCM or APN)
 
 * `device_token_new` - in case device_token changes for a device (which happens on Android platform) new one is stored here
@@ -243,7 +241,7 @@ Pushkin has two entities for working with user data - **login** and **device**. 
 
 *Example of adding login and device data into the database*
 ```python
-database.process_user_login(login_id=12345, language_id=1, platform_id=1, device_id='qwe', device_token='123', application_version=1)
+database.process_user_login(login_id=12345, language_id=1, platform_id=1, device_token='123', application_version=1)
 ```
 
 ---
@@ -259,14 +257,24 @@ Objects returned by wrapper functions has all fields and many to one relationshi
 pushkin.database.get_session()
 ```
 
-* Get device tokens for a given login
+* Get device tokens for a given login.
 ```python
 pushkin.database.get_device_tokens(login_id)
 ```
 
-* Add or update device and login data
+* Update canonical data for android devices.
 ```python
-process_user_login(login_id, language_id, platform_id, device_id, device_token, application_version)
+pushkin.database.update_canonicals(canonicals)
+```
+
+* Update data for unregistered Android devices. Unregistered device will not receive notifications and will be deleted when number of devices exceeds maximum.
+```python
+pushkin.database.update_unregistered_devices(unregistered)
+```
+
+* Add or update device and login data. Also deletes oldest device if number of devices exceeds maximum.
+```python
+process_user_login(login_id, language_id, platform_id, device_token, application_version)
 ```
 
 * Add or update a login entity. Returns new or updated login.
@@ -276,7 +284,7 @@ upsert_login(login_id, language_id)
 
 * Add or update a device entity. Returns new or updated device with relation to login preloaded.
 ```python
-upsert_device(login_id, platform_id, device_id, device_token, application_version, unregistered_ts=None)
+upsert_device(login_id, platform_id, device_token, application_version, unregistered_ts=None)
 ```
 
 * Get the list of all logins
@@ -570,8 +578,6 @@ Used to register a device to a specific user. It also keeps track of user detail
 		* Android Tablet = 6.   
 		Required.
 
-	* `deviceId` - Unique identifier for this device. You can find the instructions online how to retrieve this for both Android and iOS devices. Required.
-
 	* `deviceToken` - Token string for sending push notifications to this device. Can be found in the documentation of Android (GCM) / iOS (APN) push notification service provider. Required.
 
 	* `applicationVersion` - Integer value of the current version of the application. For future use. Optional.
@@ -589,7 +595,6 @@ JSON request
       "pairs": {
         "languageId": "1",
         "platformId" : "1",
-        "deviceId" : "S342DFS",
         "deviceToken" : "VD3#fd4",
         "applicationVersion" : "1"
       }
@@ -658,7 +663,6 @@ JSON String
       "pairs": {
         "languageId": "1",
         "platformId" : "1",
-        "deviceId" : "S342DFS",
         "deviceToken" : "VD3#fd4",
         "applicationVersion" : "1"
       }
@@ -687,9 +691,6 @@ pair.key = 'languageId'
 pair.value = '1'
 pair.key = 'platformId'
 pair.value = '1'
-pair = event_proto.pairs.add()
-pair.key = 'deviceId'
-pair.value = 'S342DFS'
 pair = event_proto.pairs.add()
 pair.key = 'deviceToken'
 pair.value = 'VD3#fd4'
@@ -787,6 +788,8 @@ keep_log_days = 7
 db_user = pushkin
 db_name = pushkin
 db_pass = pushkin
+db_pool_size = 2
+max_devices_per_user = 10
 
 [Event]
 # event id of prebuilt login event

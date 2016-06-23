@@ -60,7 +60,7 @@ class LoginEventHandler(EventHandler):
 
     def handle_event(self, event, event_params):
         database.process_user_login(login_id=event.user_id, language_id=event_params.get('languageId'),
-                                    platform_id=event_params['platformId'], device_id=event_params.get('deviceId'),
+                                    platform_id=event_params['platformId'],
                                     device_token=event_params.get('deviceToken'),
                                     application_version=event_params['applicationVersion'])
         return []
@@ -139,13 +139,12 @@ class EventToMessagesHandler(EventHandler):
                             title_parameter_map = get_parameter_map(localized_message.message_title)
                             raw_messages.extend(
                                 database.get_raw_messages(
-                                    login_id=event.user_id, title=localized_message.message_title.format(**title_parameter_map),
-                                    content=localized_message.message_text.format(**text_parameter_map),
+                                    login_id=event.user_id, title=localized_message.message_title.encode('utf-8').format(**title_parameter_map).decode('utf-8'),
+                                    content=localized_message.message_text.encode('utf-8').format(**text_parameter_map).decode('utf-8'),
                                     screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
                                     dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.timestamp,
                                     expiry_millis=localized_message.message.expiry_millis
-                                )
-                            )
+                                ))
                         else:
                             context.main_logger.debug("Cannot get localization for user {login_id}".format(login_id=event.user_id))
                     except:

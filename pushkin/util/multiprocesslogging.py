@@ -68,7 +68,7 @@ class LogCollector(Thread):
 
 
 def create_multiprocess_logger(logger_name, persist_logger_name, log_level, log_format, log_queue, log_file_path,
-                               when_to_rotate, keep_log_days):
+                               when_to_rotate, keep_log_days, log_suffix=None):
     """
     Creates queue logger and persist logger.
 
@@ -87,6 +87,8 @@ def create_multiprocess_logger(logger_name, persist_logger_name, log_level, log_
 
     persist_log_formatter = logging.Formatter('%(message)s')
     persist_log_handler = TimedRotatingFileHandler(log_file_path, when=when_to_rotate, interval=1, backupCount=keep_log_days)
+    if log_suffix is not None:
+        persist_log_handler.suffix = log_suffix
     persist_log_handler.setFormatter(queue_log_formatter)
     persist_logger = logging.getLogger(persist_logger_name)
     persist_logger.setLevel(log_level)

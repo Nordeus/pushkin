@@ -46,8 +46,9 @@ def setup_loggers():
 
     create_multiprocess_logger(logger_name=config.notifications_logger_name, log_level=logging.INFO,
                                persist_logger_name=PERSIST_LOGGER_PREFFIX + config.notifications_logger_name,
-                               log_format='%(message)s', log_queue=log_queue, when_to_rotate="midnight",
-                               log_file_path=config.notification_log_file_path, keep_log_days=config.keep_log_days)
+                               log_format='%(message)s', when_to_rotate=config.notification_log_when_to_rotate,
+                               log_file_path=config.notification_log_file_path, keep_log_days=config.keep_log_days,
+                               log_queue=log_queue, log_suffix=config.notification_log_rotate_suffix)
     notification_logger = logging.getLogger(config.notifications_logger_name)
 
     # start log collector thread
