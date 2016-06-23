@@ -24,7 +24,8 @@ CREATE OR REPLACE FUNCTION "process_user_login" (
 	p_language_id int2,
 	p_platform_id int2,
 	p_device_token text,
-	p_application_version int4
+	p_application_version int4,
+	p_max_devices_per_user int2
 )
 RETURNS "pg_catalog"."void" AS
 $body$
@@ -172,7 +173,6 @@ drop_func_process_user_login_old = """DROP FUNCTION IF EXISTS "process_user_logi
 
 def upgrade():
     op.drop_column('device', 'device_id')
-    op.drop_column('device', 'device_token_new')
     op.execute(drop_func_process_user_login_old)
     op.execute(func_process_user_login_new)
 
@@ -180,6 +180,5 @@ def upgrade():
 
 def downgrade():
     op.add_column('device', sa.Column('device_id', sa.Text(), nullable=False))
-    op.add_column('device', sa.Column('device_token_new', sa.Text()))
     op.execute(drop_func_process_user_login_new)
     op.execute(func_process_user_login_old)
