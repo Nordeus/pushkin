@@ -16,7 +16,7 @@ from gcm import GCM, GCMException, GCMConnectionException, GCMUnavailableExcepti
 from pyapn2.client import APNsClient
 from datetime import datetime
 from pyapn2.payload import Payload
-from pyapn2.errors import APNsException
+from pyapn2.errors import APNsException, Unregistered
 
 
 class APNS2PushSender(Sender):
@@ -26,7 +26,6 @@ class APNS2PushSender(Sender):
         self.sandbox = config.get('Messenger', 'apns_sandbox') == 'true'
         self.certificate_path = config.get('Messenger', 'apns_certificate_path')
         self.apn = APNsClient(self.certificate_path, use_sandbox=self.sandbox)
-        #self.gcm = GCM(self.access_key)
         self.canonical_ids = []
         self.unregistered_devices = []
 
@@ -77,7 +76,15 @@ class APNS2PushSender(Sender):
                 try:
                     self.apn.send_notification(data['token'], data['payload'], expiration=data['expiry'])
                 except APNsException as e:
-                    self.log.warning('APN got exception {}'.format(e))
+                    if isinstance(e, Unregistered):
+                        notification['status'] = const.NOTIFICATION_APNS_DEVICE_UNREGISTERED
+                        unregistered_data = {
+                                        'login_id': notification['login_id'],
+                                        'device_token': notification['receiver_id'],
+                                    }
+                        self.unregistered_devices.append(unregistered_data)
+                    else:
+                        self.log.warning('APN got exception {}'.format(e))
 
     def send_batch(self):
         while len(self.queue):

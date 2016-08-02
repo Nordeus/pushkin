@@ -17,6 +17,7 @@ import multiprocessing
 from pushkin.database import database
 from pushkin.sender.nordifier.apns_push_sender import APNsPushSender
 from pushkin.sender.nordifier.gcm_push_sender import GCMPushSender
+from pushkin.sender.nordifier.apns2_push_sender import APNS2PushSender
 from pushkin.util.pool import ProcessPool
 from pushkin import config, context
 from pushkin.sender.nordifier import constants
@@ -109,14 +110,12 @@ class ApnNotificationSender(NotificationSender):
                 sender = None
                 sent = []
                 try:
-                    sender = APNsPushSender(config.config, context.main_logger)
+                    sender = APNS2PushSender(config.config, context.main_logger)
                     sent = self.send_batch(sender)
                     time.sleep(self.apn_sender_interval_sec)
                 except Exception:
                     context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
                 finally:
-                    if sender is not None:
-                        sender.close_after_sending()
                     self.log_notifications(sent)
             else:
                 time.sleep(self.apn_sender_interval_sec)
