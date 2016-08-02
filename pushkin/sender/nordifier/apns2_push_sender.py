@@ -49,7 +49,7 @@ class APNS2PushSender(Sender):
             self.log.warning('APNS2: expired notification with sending_id: {0}; expiry_seconds: {1}'.format(
                 notification['sending_id'], expiry_seconds))
             notification['status'] = const.NOTIFICATION_EXPIRED
-            return False
+            return None
 
         custom = {
             'path': notification['screen'],
@@ -72,9 +72,10 @@ class APNS2PushSender(Sender):
         data = self.prepare_data(notification)
 
         if data is not None:
-            for i in range(self.connection_error_retries):
+            for i in xrange(self.connection_error_retries):
                 try:
                     self.apn.send_notification(data['token'], data['payload'], expiration=data['expiry'])
+                    break #We did it, time to break free!
                 except APNsException as e:
                     if isinstance(e, Unregistered):
                         notification['status'] = const.NOTIFICATION_APNS_DEVICE_UNREGISTERED
