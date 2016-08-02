@@ -271,7 +271,11 @@ $body$
 DECLARE
   v_elligible_pairs hstore[];
 BEGIN
-		LOCK TABLE user_message_last_time_sent IN EXCLUSIVE MODE;
+		PERFORM 1
+		FROM login
+		WHERE id IN (select cast(skeys(unnest(p_mapping)) as bigint))
+		FOR UPDATE;
+
 		SELECT INTO v_elligible_pairs * FROM get_elligible_user_message_pairs(p_mapping);
 		PERFORM update_user_message_last_time_sent(v_elligible_pairs);
 

@@ -67,6 +67,25 @@ def event_batch_json():
     }
     '''
 
+@pytest.fixture
+def event_batch_json_bad_user_id():
+    ''' Return a valid json request '''
+    return '''
+    {
+    "events": [
+            {
+                "user_id" : abc,
+                "event_id" : 1,
+                "timestamp" : 12345,
+                "pairs": {
+                    "some_constant" : "6",
+                    "world_id" : "1"
+                }
+            }
+        ]
+    }
+    '''
+
 
 @pytest.fixture
 def post_event_url(base_url):
@@ -126,5 +145,13 @@ def test_post_event_service_unavailable(setup_database, mock_processor, http_cli
     context.request_processor.submit.return_value = False
     request = tornado.httpclient.HTTPRequest(post_event_url, method='POST', body=event_batch_json)
     RequestProcessor.submit.return_value = False
+    with pytest.raises(tornado.httpclient.HTTPError):
+        yield http_client.fetch(request)
+
+@pytest.mark.gen_test
+def test_post_event(setup_database, mock_processor, http_client, post_event_url, event_batch_json_bad_user_id):
+    '''Test that a request with bad user_id is unsuccesfully parsed in post_event'''
+    context.request_processor.submit.return_value = True
+    request = tornado.httpclient.HTTPRequest(post_event_url, method='POST', body=event_batch_json_bad_user_id)
     with pytest.raises(tornado.httpclient.HTTPError):
         yield http_client.fetch(request)
