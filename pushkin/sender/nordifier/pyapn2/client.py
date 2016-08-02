@@ -19,7 +19,7 @@ class APNsClient(object):
         ssl_context.load_cert_chain(cert_file)
         self.__connection = HTTP20Connection(server, port, ssl_context=ssl_context, force_proto=proto or 'h2')
 
-    def send_notification(self, token_hex, notification, priority=IMMEDIATE_NOTIFICATION_PRIORITY, topic="eu.nordeus.TopEleven", expiration=None):
+    def send_notification(self, token_hex, notification, priority=IMMEDIATE_NOTIFICATION_PRIORITY, topic=None, expiration=None):
         json_payload = dumps(notification.dict(), ensure_ascii=False, separators=(',', ':')).encode('utf-8')
 
         headers = {

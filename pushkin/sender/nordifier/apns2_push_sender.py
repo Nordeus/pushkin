@@ -25,6 +25,7 @@ class APNS2PushSender(Sender):
         Sender.__init__(self, config, log)
         self.sandbox = config.get('Messenger', 'apns_sandbox') == 'true'
         self.certificate_path = config.get('Messenger', 'apns_certificate_path')
+        self.topic = config.get('Messenger', 'apns_topic')
         self.apn = APNsClient(self.certificate_path, use_sandbox=self.sandbox)
         self.canonical_ids = []
         self.unregistered_devices = []
@@ -74,7 +75,7 @@ class APNS2PushSender(Sender):
         if data is not None:
             for i in xrange(self.connection_error_retries):
                 try:
-                    self.apn.send_notification(data['token'], data['payload'], expiration=data['expiry'])
+                    self.apn.send_notification(data['token'], data['payload'], expiration=data['expiry'], topic=self.topic)
                     break #We did it, time to break free!
                 except APNsException as e:
                     if isinstance(e, Unregistered):
