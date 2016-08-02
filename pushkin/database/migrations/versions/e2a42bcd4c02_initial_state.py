@@ -293,6 +293,8 @@ def upgrade():
     context = op.get_context()
     connection = op.get_bind()
 
+    op.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO public;")
+
     if not context.dialect.has_table(connection.engine, 'login'):
         op.create_table('login',
             sa.Column('id', sa.BigInteger(), server_default=sa.text(u"NULL::BIGINT"), nullable=False),
