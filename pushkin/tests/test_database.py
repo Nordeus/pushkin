@@ -162,3 +162,87 @@ def test_ttl(setup_database):
     )
     assert raw_messages[0]['time_to_live_ts_bigint'] == event_ts_bigint + expiry_millis
 
+def test_device_update_application_version(setup_database):
+    '''Test that application_version is updated on login'''
+    login = database.upsert_login(1, 7)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='100', application_version=1)
+    database.process_user_login(login_id=login.id, language_id=login.language_id,
+                                platform_id=device.platform_id,
+                                device_token=device.device_token,
+                                application_version=2)
+
+    for users_device in database.get_devices(login):
+        assert users_device.application_version == 2
+
+
+def test_device_update_application_version_new_device_token(setup_database):
+    '''Test that application_version is updated on login with new device token.'''
+    login = database.upsert_login(1, 7)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='100', application_version=1)
+    # set new device token
+    canonical_data = [{'login_id': login.id, 'old_token': device.device_token, 'new_token': '100a'}]
+    database.update_canonicals(canonical_data)
+
+    # update application version via old device token
+    database.process_user_login(login_id=login.id, language_id=login.language_id,
+                                platform_id=device.platform_id,
+                                device_token=device.device_token,
+                                application_version=2)
+    for users_device in database.get_devices(login):
+        assert users_device.application_version == 2
+
+    # update application version via new device token
+    database.process_user_login(login_id=login.id, language_id=login.language_id,
+                                platform_id=device.platform_id,
+                                device_token='100a',
+                                application_version=3)
+    for users_device in database.get_devices(login):
+        assert users_device.application_version == 3
+
+def test_login_clears_unregistered(setup_database):
+    '''Test that login clears unregistered flag.'''
+    login = database.upsert_login(1, 7)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='100', application_version=1001)
+
+    # unregister
+    database.update_unregistered_devices([{'login_id': login.id, 'device_token': device.device_token}])
+    for users_device in database.get_devices(login):
+        assert users_device.unregistered_ts is not None
+
+    # reregister user with device token
+    database.process_user_login(login_id=login.id, language_id=login.language_id,
+                                platform_id=device.platform_id,
+                                device_token=device.device_token,
+                                application_version=device.application_version)
+
+    # reregistered user's device should clear unregistered flag
+    for users_device in database.get_devices(login):
+        assert users_device.unregistered_ts is None
+
+def test_login_clears_unregistered_new_device_token(setup_database):
+    '''Test that login clears unregistered flag with new device token set.'''
+    login = database.upsert_login(1, 7)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='100', application_version=1001)
+    # set new device token
+    canonical_data = [{'login_id': login.id, 'old_token': device.device_token, 'new_token': '100a'}]
+    database.update_canonicals(canonical_data)
+
+    # unregister
+    database.update_unregistered_devices([{'login_id': login.id, 'device_token': '100a'}])
+    for users_device in database.get_devices(login):
+        assert users_device.unregistered_ts is not None
+
+    # reregister user with device token new
+    database.process_user_login(login_id=login.id, language_id=login.language_id,
+                                platform_id=device.platform_id,
+                                device_token='100a',
+                                application_version=device.application_version)
+
+    # reregistered user's device should clear unregistered flag
+    for users_device in database.get_devices(login):
+        assert users_device.unregistered_ts is None
+
+
+
+
+
