@@ -146,7 +146,7 @@ BEGIN
 		UPDATE device
 		SET application_version = d.application_version
 		FROM data d
-		WHERE device.device_token = d.device_token
+		WHERE (device.device_token = d.device_token OR device.device_token_new = d.device_token)
 			AND device.login_id = d.login_id
 			AND device.platform_id = d.platform_id
 		RETURNING d.*
@@ -176,6 +176,13 @@ BEGIN
 	)
 	DELETE FROM device
 	WHERE id IN (SELECT id FROM devices_to_delete);
+
+	-- clear unregistered flag for the device
+	UPDATE device SET unregistered_ts = NULL
+	WHERE login_id = p_login_id
+	    AND platform_id = p_platform_id
+	    AND p_device_token IN (device_token, device_token_new)
+	    AND unregistered_ts IS NOT NULL;
 
 END;
 $body$
