@@ -231,13 +231,24 @@ def test_login_clears_unregistered_new_device_token(setup_database):
     database.update_unregistered_devices([{'login_id': login.id, 'device_token': '100a'}])
     for users_device in database.get_devices(login):
         assert users_device.unregistered_ts is not None
+    # reregister user with old device token
+    database.process_user_login(login_id=login.id, language_id=login.language_id,
+                                platform_id=device.platform_id,
+                                device_token=device.device_token,
+                                application_version=device.application_version)
+    # reregistered user's device should clear unregistered flag
+    for users_device in database.get_devices(login):
+        assert users_device.unregistered_ts is None
 
+    # unregister
+    database.update_unregistered_devices([{'login_id': login.id, 'device_token': '100a'}])
+    for users_device in database.get_devices(login):
+        assert users_device.unregistered_ts is not None
     # reregister user with device token new
     database.process_user_login(login_id=login.id, language_id=login.language_id,
                                 platform_id=device.platform_id,
                                 device_token='100a',
                                 application_version=device.application_version)
-
     # reregistered user's device should clear unregistered flag
     for users_device in database.get_devices(login):
         assert users_device.unregistered_ts is None
