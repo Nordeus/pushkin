@@ -143,10 +143,11 @@ BEGIN
 		SELECT * FROM data_tmp WHERE device_token IS NOT NULL
 	),
 	update_part AS (
-		UPDATE device
-		SET application_version = d.application_version
+		UPDATE device SET
+		application_version = d.application_version,
+		unregistered_ts = NULL
 		FROM data d
-		WHERE device.device_token = d.device_token
+		WHERE (device.device_token = d.device_token OR device.device_token_new = d.device_token)
 			AND device.login_id = d.login_id
 			AND device.platform_id = d.platform_id
 		RETURNING d.*
