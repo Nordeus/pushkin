@@ -49,7 +49,6 @@ setup(
         'configparser>=3.3.0',
         'protobuf>=2.6.1',
         'psycopg2>=2.6',
-        'python-daemon>=2.0.6',
         'requests>=2.9.1',
         'sqlalchemy>=1.0.12',
         'alembic>=0.8.6'
