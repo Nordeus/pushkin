@@ -1,5 +1,6 @@
 
 # Pushkin
+[![Build Status](https://travis-ci.org/Nordeus/pushkin.svg?branch=master)](https://travis-ci.org/Nordeus/pushkin)
 
 ## Introduction
 
