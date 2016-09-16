@@ -112,13 +112,13 @@ class ApnNotificationSender(NotificationSender):
                 try:
                     sender = APNS2PushSender(config.config, context.main_logger)
                     sent = self.send_batch(sender)
-                    time.sleep(self.apn_sender_interval_sec)
+                    unregistered_devices = sender.get_unregistered_devices()
+                    if len(unregistered_devices) > 0:
+                        NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
                 except Exception:
                     context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
                 finally:
                     self.log_notifications(sent)
-            else:
-                time.sleep(self.apn_sender_interval_sec)
 
 
 class GcmNotificationSender(NotificationSender):

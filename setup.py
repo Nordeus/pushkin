@@ -12,7 +12,7 @@ any type of application. It supports both Android and iOS platforms.
 
 setup(
     name='pushkin',
-    version='0.1.4c',
+    version='0.1.5',
 
     description='Pushkin is a free open source tool for sending push notifications',
     long_description=long_description,
@@ -51,7 +51,8 @@ setup(
         'psycopg2>=2.6',
         'requests>=2.9.1',
         'sqlalchemy>=1.0.12',
-        'alembic>=0.8.6'
+        'alembic>=0.8.6',
+        'hyper>=0.6.2',
         ],
     package_data = {
         '': ['*.sql', '*.sh', '*.ini', '*.mako']

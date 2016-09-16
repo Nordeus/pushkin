@@ -76,6 +76,7 @@ class APNS2PushSender(Sender):
             for i in xrange(self.connection_error_retries):
                 try:
                     self.apn.send_notification(data['token'], data['payload'], expiration=data['expiry'], topic=self.topic)
+                    notification['status'] = const.NOTIFICATION_SUCCESS
                     break #We did it, time to break free!
                 except APNsException as e:
                     if isinstance(e, Unregistered):
