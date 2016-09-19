@@ -94,14 +94,24 @@ def get_session():
 
 def get_device_tokens(login_id):
     '''
-    Get device tokens for a given login.
+    Get device tokens for a given login. Removes duplicates per provider.
     '''
     session = get_session()
     result = session.query(model.Device.platform_id,
                     func.coalesce(model.Device.device_token_new, model.Device.device_token).label('device_token')).\
         filter(model.Device.login_id == login_id).filter(model.Device.unregistered_ts.is_(None)).all()
     session.close()
-    return result
+
+    # only return unique device tokens per provider (gcm, apn) to avoid sending duplicates
+    devices = set()
+    provider_tokens = set()
+    for device in sorted(result):
+        platform_id, device_token = device
+        provider_token = (constants.PLATFORM_BY_PROVIDER[platform_id], device_token)
+        if provider_token not in provider_tokens:
+            devices.add(device)
+            provider_tokens.add(provider_token)
+    return list(devices)
 
 
 def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, message_id=0, event_ts_bigint=None,
