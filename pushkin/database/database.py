@@ -105,7 +105,7 @@ def get_device_tokens(login_id):
     # only return unique device tokens per provider (gcm, apn) to avoid sending duplicates
     devices = set()
     provider_tokens = set()
-    for device in sorted(result):
+    for device in sorted(result): # sorting to make unit tests easier
         platform_id, device_token = device
         provider_token = (constants.PLATFORM_BY_PROVIDER[platform_id], device_token)
         if provider_token not in provider_tokens:
