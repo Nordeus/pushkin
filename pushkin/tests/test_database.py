@@ -28,7 +28,7 @@ def test_devices(setup_database):
     assert list(database.get_device_tokens(login_id=12345)) == [(1, '123')]
     database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_token='124', application_version=1007)
     database.process_user_login(login_id=12345, language_id=7, platform_id=1, device_token='125', application_version=1007)
-    assert list(database.get_device_tokens(login_id=12345)) == [(1, '123'), (1, '124'), (1, '125')]
+    assert sorted(list(database.get_device_tokens(login_id=12345))) == [(1, '123'), (1, '124'), (1, '125')]
 
 
 def test_message(setup_database):
@@ -132,17 +132,17 @@ def test_device_overflow(setup_database):
     database.update_canonicals([{'login_id': login_id, 'old_token': '123', 'new_token': '124'}])
     assert list(database.get_device_tokens(login_id=login_id)) == [(1, '124')]
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='125', application_version=1007)
-    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '124'), (1, '125')]
+    assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '124'), (1, '125')]
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='126', application_version=1007)
-    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '124'), (1, '125'), (1, '126')]
+    assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '124'), (1, '125'), (1, '126')]
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='127', application_version=1007)
-    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '125'), (1, '126'), (1, '127')]
+    assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '125'), (1, '126'), (1, '127')]
     database.update_unregistered_devices([{'login_id': login_id, 'device_token': '126'}])
-    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '125'), (1, '127')]
+    assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '125'), (1, '127')]
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='128', application_version=1007)
-    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '125'), (1, '127'), (1, '128')]
+    assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '125'), (1, '127'), (1, '128')]
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='129', application_version=1007)
-    assert list(database.get_device_tokens(login_id=login_id)) == [(1, '127'), (1, '128'), (1, '129')]
+    assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '127'), (1, '128'), (1, '129')]
 
 
 def test_ttl(setup_database):
@@ -253,7 +253,24 @@ def test_login_clears_unregistered_new_device_token(setup_database):
     for users_device in database.get_devices(login):
         assert users_device.unregistered_ts is None
 
+def test_multiple_devices_with_same_token(setup_database):
+    '''Test that even if there are multiple devices with same token, return only one to avoid multiple push notifications'''
 
+    # prepare data. insert several devices with same device token
+    login = database.upsert_login(1, 7)
+
+    database.upsert_device(login_id=login.id, platform_id=1, device_token='old1', application_version=1000)
+    database.update_canonicals([{'login_id': login.id, 'old_token': 'old1', 'new_token': 'new'}])
+
+    database.upsert_device(login_id=login.id, platform_id=2, device_token='old2', application_version=1000)
+    database.update_canonicals([{'login_id': login.id, 'old_token': 'old2', 'new_token': 'new'}])
+
+    database.upsert_device(login_id=login.id, platform_id=5, device_token='old5', application_version=1000)
+    database.update_canonicals([{'login_id': login.id, 'old_token': 'old5', 'new_token': 'new'}])
+
+    database.upsert_device(login_id=login.id, platform_id=1, device_token='new', application_version=1000)
+
+    assert sorted(list(database.get_device_tokens(login_id=login.id))) == [(1, 'new'), (2, 'new')]
 
 
 
