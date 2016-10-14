@@ -135,7 +135,7 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
         'time_to_live_ts_bigint': time_to_live_ts_bigint,
         'status': constants.NOTIFICATION_READY,
         'message_id': message_id,
-        'campaign_id': 0,
+        'campaign_id': 1,
         'sending_id': 0,
         'dry_run': dry_run
     }
