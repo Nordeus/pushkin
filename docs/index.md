@@ -607,7 +607,7 @@ JSON request
 
 Used to switch off sending of notifications for a certain user. Every event should is treated like a snapshot of blacklisted messages, there no updates, every new blacklist event overrides the one before it.
 
-* Event ID: 4002
+* Event ID: 4006
 * Key/Value pairs definition:
 
 Pair values should be the message ids that should be blacklisted. The concrete values for keys in this case are not important.
@@ -620,7 +620,7 @@ JSON request
   "events": [
     {
       "user_id" : 1338,
-      "event_id" : 4002,
+      "event_id" : 4006,
       "timestamp" : 1458823448000,
       "pairs": {
         "blacklist1": 1,
@@ -822,6 +822,7 @@ max_devices_per_user = 10
 [Event]
 # event id of prebuilt login event
 login_event_id = 4001
+turn_off_notification_event_id = 4006
 
 [RequestHandler]
 # URLs for all request handlers
