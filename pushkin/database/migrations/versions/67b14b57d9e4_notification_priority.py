@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 
 def upgrade():
-    op.add_column('message', sa.Column('priority', sa.Text(), nullable=False, default='normal'))
+    op.add_column('message', sa.Column('priority', sa.Text(), nullable=False, server_default=sa.text(u"'normal'::text")))
 
 
 def downgrade():
