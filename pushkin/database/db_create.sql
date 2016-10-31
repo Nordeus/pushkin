@@ -42,6 +42,7 @@ CREATE TABLE "message" (
 	"trigger_event_id" int4,
 	"screen" text NOT NULL DEFAULT '',
 	"expiry_millis" int8,
+	"priority" text NOT NULL DEFAULT 'normal'
 	PRIMARY KEY ("id"),
 	CONSTRAINT "c_message_unique_name" UNIQUE("name")
 );
@@ -333,7 +334,8 @@ CREATE OR REPLACE FUNCTION "add_message" (
 	p_language_id int2,
 	p_message_title text,
 	p_message_text text,
-	p_screen text
+	p_screen text,
+	p_priority text
 )
 RETURNS int4 AS
 $body$
@@ -351,8 +353,8 @@ BEGIN
 
 	IF NOT v_message_exists
 	THEN
-		INSERT INTO message(name, trigger_event_id, cooldown_ts, screen)
-		VALUES (p_message_name, p_trigger_event_id, p_cooldown_ts, p_screen);
+		INSERT INTO message(name, trigger_event_id, cooldown_ts, screen, priority)
+		VALUES (p_message_name, p_trigger_event_id, p_cooldown_ts, p_screen, p_priority);
 	END IF;
 
 	SELECT INTO v_message_id

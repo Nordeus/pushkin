@@ -143,7 +143,7 @@ class EventToMessagesHandler(EventHandler):
                                     content=localized_message.message_text.encode('utf-8').format(**text_parameter_map).decode('utf-8'),
                                     screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
                                     dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.timestamp,
-                                    expiry_millis=localized_message.message.expiry_millis
+                                    expiry_millis=localized_message.message.expiry_millis, priority=localized_message.message.priority
                                 ))
                         else:
                             context.main_logger.debug("Cannot get localization for user {login_id}".format(login_id=event.user_id))

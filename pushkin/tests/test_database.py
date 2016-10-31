@@ -14,6 +14,8 @@ import datetime, time
 from pushkin import context
 
 from pushkin import test_config_ini_path
+from pushkin.sender.nordifier.gcm_push_sender import GCM2
+
 context.setup_configuration(test_config_ini_path)
 
 @pytest.fixture
@@ -252,6 +254,34 @@ def test_login_clears_unregistered_new_device_token(setup_database):
     # reregistered user's device should clear unregistered flag
     for users_device in database.get_devices(login):
         assert users_device.unregistered_ts is None
+
+def test_priority(setup_database):
+    user_id = 12345
+    event_ts_bigint = int(round(time.time() * 1000))
+    expiry_millis = 60000
+    login = database.upsert_login(user_id, 1)
+    device = database.upsert_device(login_id=login.id, platform_id=1, device_token='123', application_version=1001)
+    localized_message = database.add_message(message_name='test', language_id=1, message_title='title en',
+                                      message_text='text en', priority=GCM2.PRIORITY_NORMAL)
+    raw_messages = database.get_raw_messages(
+                                login_id=user_id, title=localized_message.message_title,
+                                content=localized_message.message_text.format,
+                                screen=localized_message.message.screen, game='game', world_id=1,
+                                dry_run=True, message_id=localized_message.message_id, event_ts_bigint=event_ts_bigint,
+                                priority=localized_message.message.priority
+    )
+    assert raw_messages[0]['priority'] == GCM2.PRIORITY_NORMAL
+
+    localized_message = database.add_message(message_name='test', language_id=1, message_title='title en',
+                                      message_text='text en', priority=GCM2.PRIORITY_HIGH)
+    raw_messages = database.get_raw_messages(
+                                login_id=user_id, title=localized_message.message_title,
+                                content=localized_message.message_text.format,
+                                screen=localized_message.message.screen, game='game', world_id=1,
+                                dry_run=True, message_id=localized_message.message_id, event_ts_bigint=event_ts_bigint,
+                                priority=localized_message.message.priority
+    )
+    assert raw_messages[0]['priority'] == GCM2.PRIORITY_HIGH
 
 def test_multiple_devices_with_same_token(setup_database):
     '''Test that even if there are multiple devices with same token, return only one to avoid multiple push notifications'''
