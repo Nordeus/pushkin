@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import time
 import json
 import random
+from pushkin import context
 
 from sender import Sender
 import constants as const
@@ -35,7 +36,11 @@ class GCM2(GCM):
         """
         payload = GCM.construct_payload(self, registration_ids, data=data, collapse_key=collapse_key,
                                         delay_while_idle=delay_while_idle, time_to_live=time_to_live,
-                                        is_json=False, dry_run=dry_run)
+                                        is_json=is_json, dry_run=dry_run)
+
+        if is_json:
+            payload = json.loads(payload)
+
         payload['priority'] = priority
 
         if is_json:
