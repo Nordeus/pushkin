@@ -42,7 +42,7 @@ CREATE TABLE "message" (
 	"trigger_event_id" int4,
 	"screen" text NOT NULL DEFAULT '',
 	"expiry_millis" int8,
-	"priority" text NOT NULL DEFAULT 'normal'
+	"priority" text NOT NULL DEFAULT 'normal',
 	PRIMARY KEY ("id"),
 	CONSTRAINT "c_message_unique_name" UNIQUE("name")
 );
