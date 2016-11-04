@@ -301,6 +301,26 @@ def test_multiple_devices_with_same_token(setup_database):
     database.upsert_device(login_id=login.id, platform_id=1, device_token='new', application_version=1000)
 
     assert sorted(list(database.get_device_tokens(login_id=login.id))) == [(1, 'new'), (2, 'new')]
+    
+def test_device_filter(setup_database):
+    user_id = 12345
+    event_ts_bigint = int(round(time.time() * 1000))
+    expiry_millis = 60000
+    login = database.upsert_login(user_id, 1)
+    database.upsert_device(login_id=login.id, platform_id=1, device_token='123', application_version=1001)
+    database.upsert_device(login_id=login.id, platform_id=2, device_token='456', application_version=1001)
+    localized_message = database.add_message(message_name='test', language_id=1, message_title='title en',
+                                      message_text='text en', priority=GCM2.PRIORITY_NORMAL)
+
+    raw_messages = database.get_raw_messages(
+        login_id=user_id, title=localized_message.message_title,
+        content=localized_message.message_text.format,
+        screen=localized_message.message.screen, game='game', world_id=1,
+        dry_run=True, message_id=localized_message.message_id, event_ts_bigint=event_ts_bigint,
+        priority=localized_message.message.priority, filter_platform_id=6, filter_device_token='789')
+    assert len(raw_messages) == 1
+    assert raw_messages[0]['platform'] == 6
+    assert raw_messages[0]['receiver_id'] == '789'
 
 
 
