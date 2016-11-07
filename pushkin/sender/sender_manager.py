@@ -31,7 +31,7 @@ class NotificationSenderManager():
                 "Submitting notification: {notification} to ApnNotificationProcessor".format(notification=notification))
             self.apn_sender_processor.submit(notification)
         else:
-            context.main_logger.logger.error("Unknown platform type: {0}".format(notification['platform']))
+            context.main_logger.error("Unknown platform type: {0}".format(notification['platform']))
 
     def start(self):
         self.apn_sender_processor.start()
