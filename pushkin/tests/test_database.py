@@ -303,9 +303,9 @@ def test_multiple_devices_with_same_token(setup_database):
     assert sorted(list(database.get_device_tokens(login_id=login.id))) == [(1, 'new'), (2, 'new')]
     
 def test_device_filter(setup_database):
+    '''Test that device from device filter is used if specified in event.'''
     user_id = 12345
     event_ts_bigint = int(round(time.time() * 1000))
-    expiry_millis = 60000
     login = database.upsert_login(user_id, 1)
     database.upsert_device(login_id=login.id, platform_id=1, device_token='123', application_version=1001)
     database.upsert_device(login_id=login.id, platform_id=2, device_token='456', application_version=1001)
