@@ -9,10 +9,83 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 import time
+import json
+import random
+from pushkin import context
 
 from sender import Sender
 import constants as const
 from gcm import GCM, GCMException, GCMConnectionException, GCMUnavailableException
+from gcm import GCMMissingRegistrationException, GCMTooManyRegIdsException
+
+
+class GCM2(GCM):
+    PRIORITY_NORMAL = 'normal'
+    PRIORITY_HIGH = 'high'
+
+    def construct_payload(self, registration_ids, data=None, collapse_key=None,
+                          delay_while_idle=False, time_to_live=None, is_json=True, dry_run=False,
+                          priority=PRIORITY_NORMAL):
+        """
+        Construct the dictionary mapping of parameters.
+        Encodes the dictionary into JSON if for json requests.
+        Helps appending 'data.' prefix to the plaintext data: 'hello' => 'data.hello'
+
+        :return constructed dict or JSON payload
+        :raises GCMInvalidTtlException: if time_to_live is invalid
+        """
+        payload = GCM.construct_payload(self, registration_ids, data=data, collapse_key=collapse_key,
+                                        delay_while_idle=delay_while_idle, time_to_live=time_to_live,
+                                        is_json=is_json, dry_run=dry_run)
+
+        if is_json:
+            payload = json.loads(payload)
+
+        payload['priority'] = priority
+
+        if is_json:
+            payload = json.dumps(payload)
+
+        return payload
+
+    def json_request(self, registration_ids, data=None, collapse_key=None,
+                     delay_while_idle=False, time_to_live=None, retries=5, dry_run=False, priority=PRIORITY_NORMAL):
+        """
+        Makes a JSON request to GCM servers
+
+        :param registration_ids: list of the registration ids
+        :param data: dict mapping of key-value pairs of messages
+        :return dict of response body from Google including multicast_id, success, failure, canonical_ids, etc
+        :raises GCMMissingRegistrationException: if the list of registration_ids is empty
+        :raises GCMTooManyRegIdsException: if the list of registration_ids exceeds 1000 items
+        """
+
+        if not registration_ids:
+            raise GCMMissingRegistrationException("Missing registration_ids")
+        if len(registration_ids) > 1000:
+            raise GCMTooManyRegIdsException("Exceded number of registration_ids")
+
+        attempt = 0
+        backoff = self.BACKOFF_INITIAL_DELAY
+        for attempt in range(retries):
+            payload = self.construct_payload(
+                registration_ids, data, collapse_key,
+                delay_while_idle, time_to_live, True, dry_run, priority=priority
+            )
+            response = self.make_request(payload, is_json=True)
+            info = self.handle_json_response(response, registration_ids)
+
+            unsent_reg_ids = self.extract_unsent_reg_ids(info)
+            if unsent_reg_ids:
+                registration_ids = unsent_reg_ids
+                sleep_time = backoff / 2 + random.randrange(backoff)
+                time.sleep(float(sleep_time) / 1000)
+                if 2 * backoff < self.MAX_BACKOFF_DELAY:
+                    backoff *= 2
+            else:
+                break
+
+        return info
 
 
 class GCMPushSender(Sender):
@@ -25,7 +98,7 @@ class GCMPushSender(Sender):
         Sender.__init__(self, config, log)
         self.access_key = config.get('Messenger', 'gcm_access_key')
         self.base_deeplink_url = config.get('Messenger', 'base_deeplink_url')
-        self.gcm = GCM(self.access_key)
+        self.gcm = GCM2(self.access_key)
         self.canonical_ids = []
         self.unregistered_devices = []
 
@@ -64,7 +137,8 @@ class GCMPushSender(Sender):
                         data=data,
                         time_to_live=expiry_seconds,
                         retries=self.connection_error_retries,
-                        dry_run=dry_run
+                        dry_run=dry_run,
+                        priority=notification['priority']
                     )
                     if 'errors' in response:
                         # Initially it's a Fatal Error, unless we determine exact error

@@ -101,7 +101,7 @@ def test_login_event_more_platforms(setup):
     event_request_platform2.process()
 
     device_tokens = list(database.get_device_tokens(1338))
-    assert device_tokens == [(1, 'str_device_token_1'), (2, 'str_device_token_2')]
+    assert sorted(device_tokens) == [(1, 'str_device_token_1'), (2, 'str_device_token_2')]
 
 
 def test_login_event_same_platform_different_device(setup):
@@ -116,7 +116,7 @@ def test_login_event_same_platform_different_device(setup):
     event_request_platform2.process()
 
     device_tokens = list(database.get_device_tokens(1338))
-    assert device_tokens == [(1, 'str_device_token_1'), (1, 'str_device_token_2')]
+    assert sorted(device_tokens) == [(1, 'str_device_token_1'), (1, 'str_device_token_2')]
 
 
 def test_build_messages_missing_user(setup):

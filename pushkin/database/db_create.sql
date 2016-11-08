@@ -42,6 +42,7 @@ CREATE TABLE "message" (
 	"trigger_event_id" int4,
 	"screen" text NOT NULL DEFAULT '',
 	"expiry_millis" int8,
+	"priority" text NOT NULL DEFAULT 'normal',
 	PRIMARY KEY ("id"),
 	CONSTRAINT "c_message_unique_name" UNIQUE("name")
 );
@@ -143,10 +144,11 @@ BEGIN
 		SELECT * FROM data_tmp WHERE device_token IS NOT NULL
 	),
 	update_part AS (
-		UPDATE device
-		SET application_version = d.application_version
+		UPDATE device SET
+		application_version = d.application_version,
+		unregistered_ts = NULL
 		FROM data d
-		WHERE device.device_token = d.device_token
+		WHERE (device.device_token = d.device_token OR device.device_token_new = d.device_token)
 			AND device.login_id = d.login_id
 			AND device.platform_id = d.platform_id
 		RETURNING d.*
@@ -336,7 +338,8 @@ CREATE OR REPLACE FUNCTION "add_message" (
 	p_language_id int2,
 	p_message_title text,
 	p_message_text text,
-	p_screen text
+	p_screen text,
+	p_priority text
 )
 RETURNS int4 AS
 $body$
@@ -354,8 +357,8 @@ BEGIN
 
 	IF NOT v_message_exists
 	THEN
-		INSERT INTO message(name, trigger_event_id, cooldown_ts, screen)
-		VALUES (p_message_name, p_trigger_event_id, p_cooldown_ts, p_screen);
+		INSERT INTO message(name, trigger_event_id, cooldown_ts, screen, priority)
+		VALUES (p_message_name, p_trigger_event_id, p_cooldown_ts, p_screen, p_priority);
 	END IF;
 
 	SELECT INTO v_message_id

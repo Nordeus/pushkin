@@ -55,6 +55,7 @@ class Message(Base):
     trigger_event_id = Column(Integer)
     expiry_millis = Column(BigInteger)
     screen = Column(Text, nullable=False, server_default=text("''::text"))
+    priority = Column(Text, nullable=False, server_default=text("'normal'::text"))
 
 class MessageBlacklist(Base):
     __tablename__ = 'message_blacklist'
