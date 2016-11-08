@@ -34,6 +34,8 @@ log_levels = {
 }
 
 def init(configuration_file):
+    global db_host
+    global db_port
     global db_name
     global db_user
     global db_pass
@@ -107,13 +109,15 @@ def init(configuration_file):
     turn_off_notification_event_id = config.getint(EVENT_CONFIG_SECTION, 'turn_off_notification_event_id')
 
     # database
+    db_host = config.get(DATABASE_CONFIG_SECTION, 'db_host')
+    db_port = config.get(DATABASE_CONFIG_SECTION, 'db_port')
     db_name = config.get(DATABASE_CONFIG_SECTION, 'db_name')
     db_user = config.get(DATABASE_CONFIG_SECTION, 'db_user')
     db_pass = config.get(DATABASE_CONFIG_SECTION, 'db_pass')
     db_pool_size = int(config.get(DATABASE_CONFIG_SECTION, 'db_pool_size'))
     max_devices_per_user = int(config.get(DATABASE_CONFIG_SECTION, 'max_devices_per_user'))
-    sqlalchemy_url = 'postgresql+psycopg2://{db_user}:{db_pass}@localhost:5432/{db_name}'.\
-        format(db_user=db_user, db_pass=db_pass, db_name=db_name)
+    sqlalchemy_url = 'postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}'.\
+        format(db_user=db_user, db_pass=db_pass, db_name=db_name, db_host=db_host, db_port=db_port)
 
     #Handler URLs
     proto_event_handler_url = config.get(REQUEST_HANDLER_SECTION, 'proto_event_handler_url')

@@ -66,7 +66,8 @@ def execute_query(query):
     '''
     Execute a specific query.
     '''
-    with dbapi2.connect(database=config.db_name, user=config.db_user) as conn:
+    with dbapi2.connect('host={db_host} user={db_user} password={db_pass} port={db_port} dbname={db_name}'.format(
+            db_host=config.db_host, db_port=config.db_port, db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute(query)
 
@@ -74,7 +75,8 @@ def execute_query_with_results(query):
     '''
     Execute a specific query and return results.
     '''
-    with dbapi2.connect('host=localhost user={db_user} password={db_pass} port=5432 dbname={db_name}'.format(db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
+    with dbapi2.connect('host={db_host} user={db_user} password={db_pass} port={db_port} dbname={db_name}'.format(
+            db_host=config.db_host, db_port=config.db_port, db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute(query)
             rows = cur.fetchall()
@@ -442,9 +444,8 @@ def get_and_update_messages_to_send(user_message_set):
         ["'{key}=>{value}'::hstore".format(key=entry[0], value=entry[1]) for entry in user_message_set])
     hstore_array = 'ARRAY[{}]'.format(hstore_items)
     query = 'SELECT get_and_update_messages_to_send({})'.format(hstore_array)
-    with dbapi2.connect('host=localhost user={db_user} password={db_pass} port=5432 dbname={db_name}'.format(db_user=config.db_user, db_pass=config.db_pass, db_name=config.db_name)) as conn:
-        psycopg2.extras.register_hstore(conn)
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute(query)
-            user_message_pairs = cur.fetchall()[0][0]
+    session = get_session()
+    user_message_pairs = session.execute(text(query)).fetchall()[0][0]
+    session.commit()
+    session.close()
     return user_message_pairs
