@@ -48,7 +48,7 @@ setup(
         'tornado>=4.2.1',
         'configparser>=3.3.0',
         'protobuf>=2.6.1',
-        'psycopg2>=2.6',
+        'psycopg2>=2.5.1',
         'requests>=2.9.1',
         'sqlalchemy>=1.0.12',
         'alembic>=0.8.6'
