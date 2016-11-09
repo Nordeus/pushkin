@@ -51,7 +51,8 @@ setup(
         'psycopg2>=2.5.1',
         'requests>=2.9.1',
         'sqlalchemy>=1.0.12',
-        'alembic>=0.8.6'
+        'alembic>=0.8.6',
+        'hyper>=0.6.2',
         ],
     package_data = {
         '': ['*.sql', '*.sh', '*.ini', '*.mako']
