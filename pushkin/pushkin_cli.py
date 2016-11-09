@@ -92,7 +92,7 @@ def start():
     # start server
     server = tornado.httpserver.HTTPServer(create_app())
     server.bind(context.config.port)  # port
-    server.start(1)
+    server.start(0)
     context.main_logger.info("Pushkin has started")
     tornado.ioloop.IOLoop.instance().start()
 

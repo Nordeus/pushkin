@@ -15,13 +15,14 @@ from pushkin.util.pool import ThreadPool
 from pushkin import context
 from pushkin import config
 from pushkin.sender.sender_manager import NotificationSenderManager
+from pushkin.util.pool import ProcessPool
 
 
-class RequestProcessor(ThreadPool):
+class RequestProcessor(ProcessPool):
     """Background thread pool for doing blocking tasks from server requests and offloading notifications to other processes."""
 
     def __init__(self):
-        ThreadPool.__init__(self, self.__class__.__name__, config.request_processor_num_threads,
+        ProcessPool.__init__(self, self.__class__.__name__, config.request_processor_num_threads,
                             config.request_queue_limit)
         self.sender_manager = NotificationSenderManager()
 
@@ -39,5 +40,5 @@ class RequestProcessor(ThreadPool):
                 context.main_logger.exception("RequestProcessor failed to process item: {}".format(item))
 
     def start(self):
-        ThreadPool.start(self)
+        ProcessPool.start(self)
         self.sender_manager.start()
