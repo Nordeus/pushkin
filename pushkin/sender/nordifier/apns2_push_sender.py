@@ -12,7 +12,6 @@ import time
 
 from sender import Sender
 import constants as const
-from gcm import GCM, GCMException, GCMConnectionException, GCMUnavailableException
 from pyapn2.client import APNsClient
 from datetime import datetime
 from pyapn2.payload import Payload
@@ -87,7 +86,7 @@ class APNS2PushSender(Sender):
                                     }
                         self.unregistered_devices.append(unregistered_data)
                     else:
-                        self.log.warning('APN got exception {}'.format(e))
+                        self.log.exception('APN got exception {}'.format(e))
 
     def send_batch(self):
         while len(self.queue):

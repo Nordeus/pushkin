@@ -84,41 +84,20 @@ class NotificationPostProcessor(Thread):
 class ApnNotificationSender(NotificationSender):
     def __init__(self):
         NotificationSender.__init__(self, config.apn_num_processes)
-        self.apn_sender_interval_sec = config.apn_sender_interval_sec
-        self.max_batch_size = config.sender_batch_size
-
-    def send_batch(self, sender):
-        """Tries to send up to max_batch_size notifications in a single batch.
-        If there is < max_batch_size in queue, sender.send_remaining() will send the notifications.
-        If there is > max_batch_size in queue, notifications will be sent by ender.send_in_batch in last iteration.
-        """
-        sent = []
-        try:
-            for i in xrange(self.max_batch_size):
-                notification = self.task_queue.get_nowait()
-                sender.send_in_batch(notification)
-                sent.append(notification)
-        except Empty:
-            pass
-        sender.send_remaining()
-        return sent
 
     def process(self):
+        sender = APNS2PushSender(config.config, context.main_logger)
         while True:
-            if self.queue_size() > 0:
-
-                sender = None
-                sent = []
-                try:
-                    sender = APNS2PushSender(config.config, context.main_logger)
-                    sent = self.send_batch(sender)
-                    unregistered_devices = sender.get_unregistered_devices()
-                    if len(unregistered_devices) > 0:
-                        NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
-                except Exception:
-                    context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
-                finally:
-                    self.log_notifications(sent)
+            notification = self.task_queue.get()
+            try:
+                sender.send_in_batch(notification)
+                unregistered_devices = sender.get_unregistered_devices()
+                if len(unregistered_devices) > 0:
+                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
+            except Exception:
+                context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
+            finally:
+                self.log_notifications([notification])
 
 
 class GcmNotificationSender(NotificationSender):
