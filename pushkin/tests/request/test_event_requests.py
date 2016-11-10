@@ -121,34 +121,22 @@ def test_login_event_same_platform_different_device(setup):
 
 def test_build_messages_missing_user(setup):
     context.event_handler_manager = EventHandlerManager()
-    event_proto = EventMessage_pb2.Event()
-    event_proto.user_id = 5
-    event_proto.event_id = 1
-    event_proto.event_type = 2
-    event_proto.timestamp = 1442502890000
-    request = EventRequestBatch([event_proto])
+    single_request = EventRequestSingle(5, 1, {}, 1442502890000)
+    request = EventRequestBatch([single_request])
     assert len(request.build_messages()) == 0
 
 
 def test_build_messages_missing_event(setup):
     context.event_handler_manager = EventHandlerManager()
-    event_proto = EventMessage_pb2.Event()
-    event_proto.user_id = 1
-    event_proto.event_id = 5
-    event_proto.event_type = 2
-    event_proto.timestamp = 1442502890000
-    request = EventRequestBatch([event_proto])
+    single_request = EventRequestSingle(1, 5, {}, 1442502890000)
+    request = EventRequestBatch([single_request])
     assert len(request.build_messages()) == 0
 
 
 def test_build_messages_single_event_msg(setup):
     context.event_handler_manager = EventHandlerManager()
-    event_proto = EventMessage_pb2.Event()
-    event_proto.user_id = 1
-    event_proto.event_id = 2
-    event_proto.event_type = 2
-    event_proto.timestamp = 1442502890000
-    request = EventRequestBatch([event_proto])
+    single_request = EventRequestSingle(1, 2, {}, 1442502890000)
+    request = EventRequestBatch([single_request])
     messages = request.build_messages()
     print messages
     assert len(messages) == 1
@@ -157,12 +145,8 @@ def test_build_messages_single_event_msg(setup):
 
 def test_build_messages_multiple_event_msg(setup):
     context.event_handler_manager = EventHandlerManager()
-    event_proto = EventMessage_pb2.Event()
-    event_proto.user_id = 1
-    event_proto.event_id = 1
-    event_proto.event_type = 2
-    event_proto.timestamp = 1442502890000
-    request = EventRequestBatch([event_proto])
+    single_request = EventRequestSingle(1, 1, {}, 1442502890000)
+    request = EventRequestBatch([single_request])
     messages = request.build_messages()
     print messages
     assert len(messages) == 2

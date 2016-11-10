@@ -116,7 +116,7 @@ def get_device_tokens(login_id):
 
 
 def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, message_id=0, event_ts_bigint=None,
-                     expiry_millis=None, priority=GCM2.PRIORITY_NORMAL):
+                     expiry_millis=None, priority=GCM2.PRIORITY_NORMAL, filter_platform_id=None, filter_device_token=None):
     '''
     Get message dictionaries for a login id and message params.
     '''
@@ -141,7 +141,10 @@ def get_raw_messages(login_id, title, content, screen, game, world_id, dry_run, 
         'dry_run': dry_run,
         'priority': priority
     }
-    devices = get_device_tokens(login_id)
+    if filter_platform_id is not None and filter_device_token is not None:
+        devices = [(filter_platform_id, filter_device_token)]
+    else:
+        devices = get_device_tokens(login_id)
     if len(devices) > 0:
         for platform_id, device_token in devices:
             notification = base_notification.copy()
