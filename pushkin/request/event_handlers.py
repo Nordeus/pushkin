@@ -130,7 +130,9 @@ class EventToMessagesHandler(EventHandler):
         raw_messages = []
         if self.event_id == event.event_id:
 
-            filter_platform_id = int(event_params.get('platform_id'))
+            filter_platform_id = event_params.get('platform_id')
+            if filter_platform_id is not None:
+                filter_platform_id = int(filter_platform_id)
             filter_device_token = event_params.get('device_token')
             for message_id in self.message_ids:
                 if message_id not in context.message_blacklist.get(event.user_id, set()):
