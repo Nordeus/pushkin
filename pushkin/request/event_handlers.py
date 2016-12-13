@@ -129,6 +129,11 @@ class EventToMessagesHandler(EventHandler):
 
         raw_messages = []
         if self.event_id == event.event_id:
+
+            filter_platform_id = event_params.get('platform_id')
+            if filter_platform_id is not None:
+                filter_platform_id = int(filter_platform_id)
+            filter_device_token = event_params.get('device_token')
             for message_id in self.message_ids:
                 if message_id not in context.message_blacklist.get(event.user_id, set()):
                     try:
@@ -143,7 +148,8 @@ class EventToMessagesHandler(EventHandler):
                                     content=localized_message.message_text.encode('utf-8').format(**text_parameter_map).decode('utf-8'),
                                     screen=localized_message.message.screen, game=config.game, world_id=config.world_id,
                                     dry_run=config.dry_run, message_id=message_id, event_ts_bigint=event.timestamp,
-                                    expiry_millis=localized_message.message.expiry_millis, priority=localized_message.message.priority
+                                    expiry_millis=localized_message.message.expiry_millis, priority=localized_message.message.priority,
+                                    filter_platform_id=filter_platform_id, filter_device_token=filter_device_token
                                 ))
                         else:
                             context.main_logger.debug("Cannot get localization for user {login_id}".format(login_id=event.user_id))
