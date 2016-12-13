@@ -34,7 +34,9 @@ from pushkin import config
 
 CONFIGURATION_FILENAME = None
 def init():
+    context.request_processor = RequestProcessor()
     database.init_db()
+    context.event_handler_manager = EventHandlerManager()
 
     current_revision = database.get_current_revision()
     head_revision = database.get_head_revision()
@@ -44,8 +46,6 @@ def init():
         sys.exit(1)
 
     context.log_queue = multiprocessing.Queue()
-    context.request_processor = RequestProcessor()
-    context.event_handler_manager = EventHandlerManager()
     context.message_blacklist = {row.login_id:set(row.blacklist) for row in database.get_all_message_blacklist()}
 
 
