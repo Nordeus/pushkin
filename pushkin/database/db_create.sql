@@ -231,6 +231,55 @@ VOLATILE
 CALLED ON NULL INPUT
 SECURITY INVOKER;
 
+DROP FUNCTION IF EXISTS "get_non_elligible_user_message_pairs" (bigint[]);
+CREATE OR REPLACE FUNCTION "get_non_elligible_user_message_pairs" (
+	p_users bigint[]
+)
+RETURNS SETOF "public"."user_message_last_time_sent" AS
+$body$
+BEGIN
+        RETURN QUERY SELECT
+            0,
+            l.id,
+            m.id,
+            0::bigint
+        FROM login l
+        LEFT JOIN user_message_last_time_sent umlts
+          ON l.id = umlts.login_id
+        LEFT JOIN message m
+          ON m.id = umlts.message_id
+        WHERE
+            l.id = ANY(p_users) AND
+        	umlts.last_time_sent_ts_bigint + m.cooldown_ts > extract(epoch from current_timestamp)::bigint*1000);
+
+END;
+$body$
+LANGUAGE 'plpgsql'
+VOLATILE
+CALLED ON NULL INPUT
+SECURITY INVOKER;
+
+DROP FUNCTION IF EXISTS "upsert_user_message_last_time_sent" (BIGINT, INT);
+CREATE OR REPLACE FUNCTION "upsert_user_message_last_time_sent" (
+	p_login_id BIGINT,
+	p_message_id INT
+)
+RETURNS "pg_catalog"."void" AS
+$body$
+BEGIN
+		INSERT INTO user_message_last_time_sent (login_id, message_id, last_time_sent_ts_bigint)
+    	VALUES (p_login_id, p_message_id, extract(epoch from current_timestamp)::bigint*1000)
+    	ON CONFLICT (login_id,message_id) do
+    	UPDATE SET last_time_sent_ts_bigint = extract(epoch from current_timestamp)::bigint*1000
+    	WHERE login_id = p_login_id AND message_id = p_message_id;
+
+END;
+$body$
+LANGUAGE 'plpgsql'
+VOLATILE
+CALLED ON NULL INPUT
+SECURITY INVOKER;
+
 DROP FUNCTION IF EXISTS "update_user_message_last_time_sent" (hstore[]);
 CREATE OR REPLACE FUNCTION "update_user_message_last_time_sent" (
 	p_mapping hstore[]

@@ -456,12 +456,32 @@ def get_and_update_messages_to_send(user_message_set):
 
     Expects a set of (login_id, message_id) tuples.
     '''
-    hstore_items = ','.join(
-        ["'{key}=>{value}'::hstore".format(key=entry[0], value=entry[1]) for entry in user_message_set])
-    hstore_array = 'ARRAY[{}]'.format(hstore_items)
-    query = 'SELECT get_and_update_messages_to_send({})'.format(hstore_array)
+    # collect user messages in a dictionary for easier processing
+    user_dict = defaultdict(set)
+    cooldowns = {}
+    for login_id, message_id, cooldown_ts in user_message_set:
+        user_dict[login_id].add(message_id)
+        cooldowns[message_id] = cooldown_ts
     session = get_session()
-    user_message_pairs = session.execute(text(query)).fetchall()[0][0]
+    joined_login_ids = ','.join([str(login_id) for login_id in user_dict.keys()])
+    array_login_ids = "'{{{}}}'".format(joined_login_ids)
+    non_eligible_messages = session.query(model.UserMessageLastTimeSent).\
+        from_statement(text("select * from get_non_elligible_user_message_pairs(:login_ids")).params(login_ids=array_login_ids).all()
+    for non_eligible_message in non_eligible_messages:
+        user_dict[non_eligible_message.login_id].discard(non_eligible_message.message_id)
+
+    # update user_message_last_time_sent
+    return_tuple = []
+    for user, messages in user_dict:
+        for message in messages:
+            return_tuple.append(user, message)
+            if message in cooldowns and cooldowns[message] > 0:
+                session.execute(text(
+                    'SELECT upsert_last_time_sent(:login_id, :message_id'),
+                                {
+                                    'login_id': login_id,
+                                    'message_id': message
+                                })
     session.commit()
     session.close()
-    return user_message_pairs
+    return return_tuple
