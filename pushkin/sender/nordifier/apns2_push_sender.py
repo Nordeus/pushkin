@@ -22,7 +22,7 @@ class APNS2PushSender(Sender):
 
     def __init__(self, config, log):
         Sender.__init__(self, config, log)
-        self.sandbox = config.get('Messenger', 'apns_sandbox') == 'true'
+        self.sandbox = config.getboolean('Messenger', 'apns_sandbox')
         self.certificate_path = config.get('Messenger', 'apns_certificate_path')
         self.topic = config.get('Messenger', 'apns_topic')
         self.apn = APNsClient(self.certificate_path, use_sandbox=self.sandbox)
