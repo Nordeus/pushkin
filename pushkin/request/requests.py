@@ -107,7 +107,7 @@ class EventRequestBatch():
     def filter_messages(self, messages):
         """Filters out messages that shouldn't be send according to cooldown"""
         if len(messages) > 0:
-            pairs = {(message['login_id'], message['message_id'], message['cooldown_ts']) for message in messages}
+            pairs = {(message['login_id'], message['message_id']) for message in messages}
             pairs_to_send = database.get_and_update_messages_to_send(pairs)
             if pairs_to_send is not None and len(pairs_to_send) > 0:
                 # converts [{user_id: message_id}, ...] to [(user_id, message_id), ...]

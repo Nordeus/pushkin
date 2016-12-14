@@ -458,10 +458,8 @@ def get_and_update_messages_to_send(user_message_set):
     '''
     # collect user messages in a dictionary for easier processing
     user_dict = defaultdict(set)
-    cooldowns = {}
-    for login_id, message_id, cooldown_ts in user_message_set:
+    for login_id, message_id in user_message_set:
         user_dict[login_id].add(message_id)
-        cooldowns[message_id] = cooldown_ts
     session = get_session()
     joined_login_ids = ','.join([str(login_id) for login_id in user_dict.keys()])
     array_login_ids = "'{{{}}}'".format(joined_login_ids)
@@ -476,16 +474,12 @@ def get_and_update_messages_to_send(user_message_set):
     for user, messages in user_dict.iteritems():
         for message in messages:
             return_tuple.append({str(user): str(message)})
-            print "messadz ", message, " ", cooldowns
-            if message in cooldowns and cooldowns[message] > 0:
-                print "wuuut?!"
-                session.execute(text(
-                    'SELECT upsert_user_message_last_time_sent((:login_id)::bigint, :message_id)'),
-                                {
-                                    'login_id': user,
-                                    'message_id': message
-                                })
+            session.execute(text(
+                'SELECT upsert_user_message_last_time_sent((:login_id)::bigint, :message_id)'),
+                            {
+                                'login_id': user,
+                                'message_id': message
+                            })
     session.commit()
     session.close()
-    print "return tuple: ", return_tuple
     return return_tuple

@@ -267,12 +267,6 @@ CREATE OR REPLACE FUNCTION "upsert_user_message_last_time_sent" (
 RETURNS "pg_catalog"."void" AS
 $body$
 BEGIN
-		-- INSERT INTO user_message_last_time_sent (login_id, message_id, last_time_sent_ts_bigint)
-    	-- VALUES (p_login_id, p_message_id, extract(epoch from current_timestamp)::bigint*1000)
-    	-- ON CONFLICT (login_id,message_id) do
-    	-- UPDATE SET last_time_sent_ts_bigint = extract(epoch from current_timestamp)::bigint*1000
-    	-- WHERE login_id = p_login_id AND message_id = p_message_id;
-
     	WITH new_value (login_id, message_id, last_time_sent_ts_bigint) AS (
     	    values  (p_login_id, p_message_id, extract(epoch from current_timestamp)::bigint*1000)
     	),
