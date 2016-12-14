@@ -465,23 +465,27 @@ def get_and_update_messages_to_send(user_message_set):
     session = get_session()
     joined_login_ids = ','.join([str(login_id) for login_id in user_dict.keys()])
     array_login_ids = "'{{{}}}'".format(joined_login_ids)
+    query = "select * from get_non_elligible_user_message_pairs({})".format(array_login_ids)
     non_eligible_messages = session.query(model.UserMessageLastTimeSent).\
-        from_statement(text("select * from get_non_elligible_user_message_pairs(:login_ids")).params(login_ids=array_login_ids).all()
+        from_statement(text(query)).all()
     for non_eligible_message in non_eligible_messages:
         user_dict[non_eligible_message.login_id].discard(non_eligible_message.message_id)
 
     # update user_message_last_time_sent
     return_tuple = []
-    for user, messages in user_dict:
+    for user, messages in user_dict.iteritems():
         for message in messages:
-            return_tuple.append(user, message)
+            return_tuple.append({str(user): str(message)})
+            print "messadz ", message, " ", cooldowns
             if message in cooldowns and cooldowns[message] > 0:
+                print "wuuut?!"
                 session.execute(text(
-                    'SELECT upsert_last_time_sent(:login_id, :message_id'),
+                    'SELECT upsert_user_message_last_time_sent((:login_id)::bigint, :message_id)'),
                                 {
-                                    'login_id': login_id,
+                                    'login_id': user,
                                     'message_id': message
                                 })
     session.commit()
     session.close()
+    print "return tuple: ", return_tuple
     return return_tuple

@@ -250,7 +250,7 @@ BEGIN
           ON m.id = umlts.message_id
         WHERE
             l.id = ANY(p_users) AND
-        	umlts.last_time_sent_ts_bigint + m.cooldown_ts > extract(epoch from current_timestamp)::bigint*1000);
+        	umlts.last_time_sent_ts_bigint + m.cooldown_ts > extract(epoch from current_timestamp)::bigint*1000;
 
 END;
 $body$
@@ -267,11 +267,26 @@ CREATE OR REPLACE FUNCTION "upsert_user_message_last_time_sent" (
 RETURNS "pg_catalog"."void" AS
 $body$
 BEGIN
+		-- INSERT INTO user_message_last_time_sent (login_id, message_id, last_time_sent_ts_bigint)
+    	-- VALUES (p_login_id, p_message_id, extract(epoch from current_timestamp)::bigint*1000)
+    	-- ON CONFLICT (login_id,message_id) do
+    	-- UPDATE SET last_time_sent_ts_bigint = extract(epoch from current_timestamp)::bigint*1000
+    	-- WHERE login_id = p_login_id AND message_id = p_message_id;
+
+    	WITH new_value (login_id, message_id, last_time_sent_ts_bigint) AS (
+    	    values  (p_login_id, p_message_id, extract(epoch from current_timestamp)::bigint*1000)
+    	),
+    	upsert as (
+			UPDATE user_message_last_time_sent umlts
+			SET last_time_sent_ts_bigint = nv.last_time_sent_ts_bigint
+			FROM new_value nv
+			WHERE umlts.login_id = nv.login_id AND umlts.message_id = nv.message_id
+			RETURNING nv.*
+		)
 		INSERT INTO user_message_last_time_sent (login_id, message_id, last_time_sent_ts_bigint)
-    	VALUES (p_login_id, p_message_id, extract(epoch from current_timestamp)::bigint*1000)
-    	ON CONFLICT (login_id,message_id) do
-    	UPDATE SET last_time_sent_ts_bigint = extract(epoch from current_timestamp)::bigint*1000
-    	WHERE login_id = p_login_id AND message_id = p_message_id;
+    	SELECT login_id, message_id, last_time_sent_ts_bigint
+    	FROM new_value nv
+    	WHERE NOT EXISTS (SELECT 1 FROM upsert u WHERE u.login_id = nv.login_id AND message_id = nv.message_id);
 
 END;
 $body$

@@ -58,15 +58,15 @@ def assert_db_consistent(dict):
 
 def test_empty_table_one_user_no_cooldown(setup):
     """Send a message with no cooldown for the first time."""
-    user_set = {(1, 1)}
+    user_set = {(1, 1, None)}
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
     assert result == [{'1': '1'}]
-    assert_db_consistent(result)
+    assert_db_consistent({})
 
 
 def test_empty_table_one_user_cooldown(setup):
     """Send a message with cooldown for the first time."""
-    user_set = {(1, 2)}
+    user_set = {(1, 2, 10000)}
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
     assert result == [{'1': '2'}]
     assert_db_consistent(result)
@@ -74,24 +74,22 @@ def test_empty_table_one_user_cooldown(setup):
 
 def test_empty_table_two_users(setup):
     """Send messages for 2 users for the first time."""
-    user_set = {(2, 1), (3, 2)}
+    user_set = {(2, 1, None), (3, 2, 10000)}
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
     assert len(result) == 2
     for row in result:
         assert row in [{'2': '1'}, {'3': '2'}]
-
-    assert_db_consistent(result)
+    assert_db_consistent([{'3': '2'}])
 
 
 def test_cooldown_updates(setup):
     """Test sending after allowed and not allowed cooldown."""
-    user_set = {(1, 1), (1, 2), (2, 3)}
+    user_set = {(1, 1, None), (1, 2, 10000), (2, 3, 1)}
 
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
-    db = assert_db_consistent(result)
-    timestamp_insert_no_cd = db[0][3]
-    timestamp_insert_big_cd = db[1][3]
-    timestamp_insert_small_cd = db[2][3]
+    db = assert_db_consistent([{'1': '2'}, {'2': '3'}])
+    timestamp_insert_big_cd = db[0][3]
+    timestamp_insert_small_cd = db[1][3]
     assert len(result) == 3
     for row in result:
         assert row in [{'1': '1'}, {'1': '2'}, {'2': '3'}]
@@ -99,12 +97,10 @@ def test_cooldown_updates(setup):
     time.sleep(1)
 
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
-    db = assert_db_consistent([{'1': '1'}, {'1': '2'}, {'2': '3'}])
-    timestamp_update_no_cd = db[0][3]
-    timestamp_update_big_cd = db[1][3]
-    timestamp_update_small_cd = db[2][3]
+    db = assert_db_consistent([{'1': '2'}, {'2': '3'}])
+    timestamp_update_big_cd = db[0][3]
+    timestamp_update_small_cd = db[1][3]
 
-    assert timestamp_insert_no_cd < timestamp_update_no_cd
     assert timestamp_insert_big_cd == timestamp_update_big_cd
     assert timestamp_insert_small_cd < timestamp_update_small_cd
 
@@ -115,8 +111,8 @@ def test_cooldown_updates(setup):
 
 def test_duplicate_pairs(setup):
     """Test if duplicates and handled."""
-    user_set = {(1, 1), (1, 1)}
+    user_set = {(2, 3, 1), (2, 3, 1)}
 
     result = sorted(database.get_and_update_messages_to_send(user_set), key=lambda x: (x))
     assert_db_consistent(result)
-    assert result == [{'1': '1'}]
+    assert result == [{'2': '3'}]
