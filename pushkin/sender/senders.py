@@ -21,6 +21,7 @@ from pushkin.sender.nordifier.apns2_push_sender import APNS2PushSender
 from pushkin.util.pool import ProcessPool
 from pushkin import config, context
 from pushkin.sender.nordifier import constants
+import timeit
 
 
 class NotificationSender(ProcessPool):
@@ -81,16 +82,43 @@ class NotificationPostProcessor(Thread):
                 context.main_logger.exception("Exception while post processing notification.")
                 pass
 
+class NotificationStatistics:
+    def __init__(self, name, logger, last_averages=100, log_time_seconds=30):
+        self.name = name
+        self.logger = logger
+        self.last_averages = last_averages
+        self.log_time_seconds = log_time_seconds
+        self.last_time_logged = timeit.default_timer()
+        self.running_average = 0
+        self.last_start = 0
+
+    def start(self):
+        self.last_start = timeit.default_timer()
+
+    def stop(self):
+        elapsed = timeit.default_timer() - self.last_start
+        self.running_average -= self.running_average / self.last_averages
+        self.running_average += elapsed / self.last_averages
+        elapsed_since_log = timeit.default_timer() - self.last_time_logged
+        if elapsed_since_log > self.log_time_seconds:
+            self.logger.info('Average time for sending push for {name} is {avg}'.format(name=self.name, avg=self.running_average))
+            self.last_time_logged = timeit.default_timer()
+
+
+
 class ApnNotificationSender(NotificationSender):
     def __init__(self):
         NotificationSender.__init__(self, config.apn_num_processes)
 
     def process(self):
         sender = APNS2PushSender(config.config, context.main_logger)
+        statistics = NotificationStatistics('APN', context.main_logger)
         while True:
             notification = self.task_queue.get()
             try:
+                statistics.start()
                 sender.send_in_batch(notification)
+                statistics.stop()
                 unregistered_devices = sender.get_unregistered_devices()
                 if len(unregistered_devices) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
@@ -105,12 +133,14 @@ class GcmNotificationSender(NotificationSender):
         NotificationSender.__init__(self, config.gcm_num_processes)
 
     def process(self):
-        main_logger = logging.getLogger(config.main_logger_name)
+        sender = GCMPushSender(config.config, context.main_logger)
+        statistics = NotificationStatistics('GCM', context.main_logger)
         while True:
             notification = self.task_queue.get()
             try:
-                sender = GCMPushSender(config.config, main_logger)
+                statistics.start()
                 sender.send_in_batch(notification)
+                statistics.stop()
                 canonical_ids = sender.get_canonical_ids()
                 if len(canonical_ids) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
@@ -118,6 +148,6 @@ class GcmNotificationSender(NotificationSender):
                 if len(unregistered_devices) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
             except Exception:
-                main_logger.exception("GcmNotificationProcessor failed to send notifications")
+                context.main_logger.exception("GcmNotificationProcessor failed to send notifications")
             finally:
                 self.log_notifications([notification])
