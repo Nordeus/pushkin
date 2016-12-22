@@ -90,7 +90,7 @@ class APNS2PushSender(Sender):
                                     }
                         self.unregistered_devices.append(unregistered_data)
                     else:
-                        self.log.exception('APN got exception {}'.format(e))
+                        self.log.warning('APN got exception {}'.format(e))
 
     def send_batch(self):
         while len(self.queue):
