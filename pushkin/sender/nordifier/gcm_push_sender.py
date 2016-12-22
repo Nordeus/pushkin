@@ -102,11 +102,15 @@ class GCMPushSender(Sender):
         self.canonical_ids = []
         self.unregistered_devices = []
 
-    def get_canonical_ids(self):
-        return self.canonical_ids
+    def pop_canonical_ids(self):
+        items = self.canonical_ids
+        self.canonical_ids = []
+        return items
 
-    def get_unregistered_devices(self):
-        return self.unregistered_devices
+    def pop_unregistered_devices(self):
+        items = self.unregistered_devices
+        self.unregistered_devices = []
+        return items
 
     def send(self, notification):
         expiry_seconds = (notification['time_to_live_ts_bigint'] - int(round(time.time() * 1000))) / 1000

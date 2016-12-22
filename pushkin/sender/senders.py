@@ -119,7 +119,7 @@ class ApnNotificationSender(NotificationSender):
                 statistics.start()
                 sender.send_in_batch(notification)
                 statistics.stop()
-                unregistered_devices = sender.get_unregistered_devices()
+                unregistered_devices = sender.pop_unregistered_devices()
                 if len(unregistered_devices) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
             except Exception:
@@ -141,10 +141,10 @@ class GcmNotificationSender(NotificationSender):
                 statistics.start()
                 sender.send_in_batch(notification)
                 statistics.stop()
-                canonical_ids = sender.get_canonical_ids()
+                canonical_ids = sender.pop_canonical_ids()
                 if len(canonical_ids) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
-                unregistered_devices = sender.get_unregistered_devices()
+                unregistered_devices = sender.pop_unregistered_devices()
                 if len(unregistered_devices) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
             except Exception:

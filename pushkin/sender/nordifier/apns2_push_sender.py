@@ -29,11 +29,15 @@ class APNS2PushSender(Sender):
         self.canonical_ids = []
         self.unregistered_devices = []
 
-    def get_canonical_ids(self):
-        return self.canonical_ids
+    def pop_canonical_ids(self):
+        items = self.canonical_ids
+        self.canonical_ids = []
+        return items
 
-    def get_unregistered_devices(self):
-        return self.unregistered_devices
+    def pop_unregistered_devices(self):
+        items = self.unregistered_devices
+        self.unregistered_devices = []
+        return items
 
     def prepare_data(self, notification):
         def to_timestamp(dt, epoch=datetime(1970, 1, 1)):
