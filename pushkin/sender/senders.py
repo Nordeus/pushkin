@@ -17,9 +17,11 @@ import multiprocessing
 from pushkin.database import database
 from pushkin.sender.nordifier.apns_push_sender import APNsPushSender
 from pushkin.sender.nordifier.gcm_push_sender import GCMPushSender
+from pushkin.sender.nordifier.apns2_push_sender import APNS2PushSender
 from pushkin.util.pool import ProcessPool
 from pushkin import config, context
 from pushkin.sender.nordifier import constants
+import timeit
 
 
 class NotificationSender(ProcessPool):
@@ -80,46 +82,50 @@ class NotificationPostProcessor(Thread):
                 context.main_logger.exception("Exception while post processing notification.")
                 pass
 
+class NotificationStatistics:
+    def __init__(self, name, logger, last_averages=100, log_time_seconds=30):
+        self.name = name
+        self.logger = logger
+        self.last_averages = last_averages
+        self.log_time_seconds = log_time_seconds
+        self.last_time_logged = timeit.default_timer()
+        self.running_average = 0
+        self.last_start = 0
+
+    def start(self):
+        self.last_start = timeit.default_timer()
+
+    def stop(self):
+        elapsed = timeit.default_timer() - self.last_start
+        self.running_average -= self.running_average / self.last_averages
+        self.running_average += elapsed / self.last_averages
+        elapsed_since_log = timeit.default_timer() - self.last_time_logged
+        if elapsed_since_log > self.log_time_seconds:
+            self.logger.info('Average time for sending push for {name} is {avg}'.format(name=self.name, avg=self.running_average))
+            self.last_time_logged = timeit.default_timer()
+
+
+
 class ApnNotificationSender(NotificationSender):
     def __init__(self):
         NotificationSender.__init__(self, config.apn_num_processes)
-        self.apn_sender_interval_sec = config.apn_sender_interval_sec
-        self.max_batch_size = config.sender_batch_size
-
-    def send_batch(self, sender):
-        """Tries to send up to max_batch_size notifications in a single batch.
-        If there is < max_batch_size in queue, sender.send_remaining() will send the notifications.
-        If there is > max_batch_size in queue, notifications will be sent by ender.send_in_batch in last iteration.
-        """
-        sent = []
-        try:
-            for i in xrange(self.max_batch_size):
-                notification = self.task_queue.get_nowait()
-                sender.send_in_batch(notification)
-                sent.append(notification)
-        except Empty:
-            pass
-        sender.send_remaining()
-        return sent
 
     def process(self):
+        sender = APNS2PushSender(config.config, context.main_logger)
+        statistics = NotificationStatistics('APN', context.main_logger)
         while True:
-            if self.queue_size() > 0:
-
-                sender = None
-                sent = []
-                try:
-                    sender = APNsPushSender(config.config, context.main_logger)
-                    sent = self.send_batch(sender)
-                    time.sleep(self.apn_sender_interval_sec)
-                except Exception:
-                    context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
-                finally:
-                    if sender is not None:
-                        sender.close_after_sending()
-                    self.log_notifications(sent)
-            else:
-                time.sleep(self.apn_sender_interval_sec)
+            notification = self.task_queue.get()
+            try:
+                statistics.start()
+                sender.send_in_batch(notification)
+                statistics.stop()
+                unregistered_devices = sender.pop_unregistered_devices()
+                if len(unregistered_devices) > 0:
+                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
+            except Exception:
+                context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
+            finally:
+                self.log_notifications([notification])
 
 
 class GcmNotificationSender(NotificationSender):
@@ -127,19 +133,21 @@ class GcmNotificationSender(NotificationSender):
         NotificationSender.__init__(self, config.gcm_num_processes)
 
     def process(self):
-        main_logger = logging.getLogger(config.main_logger_name)
+        sender = GCMPushSender(config.config, context.main_logger)
+        statistics = NotificationStatistics('GCM', context.main_logger)
         while True:
             notification = self.task_queue.get()
             try:
-                sender = GCMPushSender(config.config, main_logger)
+                statistics.start()
                 sender.send_in_batch(notification)
-                canonical_ids = sender.get_canonical_ids()
+                statistics.stop()
+                canonical_ids = sender.pop_canonical_ids()
                 if len(canonical_ids) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
-                unregistered_devices = sender.get_unregistered_devices()
+                unregistered_devices = sender.pop_unregistered_devices()
                 if len(unregistered_devices) > 0:
                     NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
             except Exception:
-                main_logger.exception("GcmNotificationProcessor failed to send notifications")
+                context.main_logger.exception("GcmNotificationProcessor failed to send notifications")
             finally:
                 self.log_notifications([notification])

@@ -102,11 +102,15 @@ class GCMPushSender(Sender):
         self.canonical_ids = []
         self.unregistered_devices = []
 
-    def get_canonical_ids(self):
-        return self.canonical_ids
+    def pop_canonical_ids(self):
+        items = self.canonical_ids
+        self.canonical_ids = []
+        return items
 
-    def get_unregistered_devices(self):
-        return self.unregistered_devices
+    def pop_unregistered_devices(self):
+        items = self.unregistered_devices
+        self.unregistered_devices = []
+        return items
 
     def send(self, notification):
         expiry_seconds = (notification['time_to_live_ts_bigint'] - int(round(time.time() * 1000))) / 1000
@@ -149,7 +153,8 @@ class GCMPushSender(Sender):
 
                                 if error == 'InvalidRegistration':
                                     notification['status'] = const.NOTIFICATION_GCM_INVALID_REGISTRATION_ID
-                                    self.log.error('GCM InvalidRegistration for notification: {0}'.format(notification))
+                                    self.log.warning('GCM InvalidRegistration for notification: {0}'.format(
+                                        notification))
 
                                 if error == 'NotRegistered':
                                     notification['status'] = const.NOTIFICATION_GCM_DEVICE_UNREGISTERED
@@ -194,7 +199,7 @@ class GCMPushSender(Sender):
                         time.sleep(delay)
         except GCMException as e:
             notification['status'] = const.NOTIFICATION_GCM_FATAL_ERROR
-            self.log.error('GCM Exception: "{0}"; while senidng notification: {1}'.format(e, notification))
+            self.log.error('GCM Exception: "{0}"; while sending notification: {1}'.format(e, notification))
 
     def send_batch(self):
         while len(self.queue):
