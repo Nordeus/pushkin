@@ -116,7 +116,12 @@ def get_device_tokens(login_id):
     provider_tokens = set()
     for device in sorted(result): # sorting to make unit tests easier
         platform_id, device_token = device
-        provider_token = (constants.PLATFORM_BY_PROVIDER[platform_id], device_token)
+        provider_id = (constants.PLATFORM_BY_PROVIDER.get(platform_id, 0)
+                       or platform_id)
+        # NOTE: Use unique tokens per *provider* only for known providers,
+        #       and unique tokens per *platform* in other cases, since
+        #       it is hard to verify providers for custom senders
+        provider_token = (provider_id, device_token)
         if provider_token not in provider_tokens:
             devices.add(device)
             provider_tokens.add(provider_token)

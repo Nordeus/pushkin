@@ -49,9 +49,7 @@ def init(configuration_file):
     global request_queue_limit
     global sender_batch_size
     global sender_queue_limit
-    global apn_sender_interval_sec
-    global gcm_num_processes
-    global apn_num_processes
+    global enabled_senders
     global dry_run
     global request_processor_num_threads
     global login_event_id
@@ -98,9 +96,7 @@ def init(configuration_file):
     request_queue_limit = config.getint(REQUEST_PROCESSOR_CONFIG_SECTION, 'queue_limit')
     sender_batch_size = config.getint(MESSENGER_CONFIG_SECTION, 'apns_batch_size')
     sender_queue_limit = config.getint(SENDER_CONFIG_SECTION, 'sender_queue_limit')
-    apn_sender_interval_sec = config.getint(SENDER_CONFIG_SECTION, 'apn_sender_interval_sec')
-    gcm_num_processes = config.getint(SENDER_CONFIG_SECTION, 'gcm_num_processes')
-    apn_num_processes = config.getint(SENDER_CONFIG_SECTION, 'apn_num_processes')
+    enabled_senders = config.get(SENDER_CONFIG_SECTION, 'enabled_senders')
     dry_run = config.getboolean(MESSENGER_CONFIG_SECTION, 'dry_run')
     request_processor_num_threads = config.getint(REQUEST_PROCESSOR_CONFIG_SECTION, 'request_processor_num_threads')
 
