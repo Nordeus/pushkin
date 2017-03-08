@@ -25,7 +25,11 @@ import timeit
 
 
 class NotificationSender(ProcessPool):
-    def __init__(self, num_workers):
+
+    NUM_WORKERS_DEFAULT = 50
+
+    def __init__(self, **kwargs):
+        num_workers = kwargs.get('workers', self.NUM_WORKERS_DEFAULT)
         ProcessPool.__init__(self, self.__class__.__name__, num_workers, config.sender_queue_limit)
 
     def limit_exceeded(self, notification):
@@ -107,8 +111,9 @@ class NotificationStatistics:
 
 
 class ApnNotificationSender(NotificationSender):
-    def __init__(self):
-        NotificationSender.__init__(self, config.apn_num_processes)
+
+    PLATFORMS = (constants.PLATFORM_IPHONE,
+                 constants.PLATFORM_IPAD)
 
     def process(self):
         sender = APNS2PushSender(config.config, context.main_logger)
@@ -129,8 +134,9 @@ class ApnNotificationSender(NotificationSender):
 
 
 class GcmNotificationSender(NotificationSender):
-    def __init__(self):
-        NotificationSender.__init__(self, config.gcm_num_processes)
+
+    PLATFORMS = (constants.PLATFORM_ANDROID,
+                 constants.PLATFORM_ANDROID_TABLET)
 
     def process(self):
         sender = GCMPushSender(config.config, context.main_logger)
