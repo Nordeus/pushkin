@@ -36,3 +36,11 @@ class GcmSenderQueueHandler(tornado.web.RequestHandler):
     def get(self):
         queue_size = context.request_processor.sender_manager.gcm_sender_processor.queue_size()
         self.write(str(queue_size))
+
+
+class NotificationPostProcessorQueue(tornado.web.RequestHandler):
+    """Responds with number of items in NotificationPostProcessor."""
+
+    def get(self):
+        queue_size = context.request_processor.sender_manager.notification_post_processor.queue_size()
+        self.write(str(queue_size))

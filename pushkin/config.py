@@ -41,6 +41,7 @@ def init(configuration_file):
     global db_pass
     global db_pool_size
     global max_devices_per_user
+    global max_users_per_device
     global sqlalchemy_url
     global config
     global game
@@ -71,6 +72,7 @@ def init(configuration_file):
     global request_queue_handler_url
     global apn_sender_queue_handler_url
     global gcm_sender_queue_handler_url
+    global notification_post_processor_queue_handler_url
 
     config = ConfigParser.ConfigParser()
     config.read(configuration_file)
@@ -112,6 +114,7 @@ def init(configuration_file):
     db_pass = config.get(DATABASE_CONFIG_SECTION, 'db_pass')
     db_pool_size = int(config.get(DATABASE_CONFIG_SECTION, 'db_pool_size'))
     max_devices_per_user = int(config.get(DATABASE_CONFIG_SECTION, 'max_devices_per_user'))
+    max_users_per_device = int(config.get(DATABASE_CONFIG_SECTION, 'max_users_per_device'))
     if db_host.startswith('/'):
         sqlalchemy_url_template = 'postgresql+psycopg2://{db_user}:{db_pass}@:{db_port}/{db_name}?host={db_host}'
     else:
@@ -127,3 +130,5 @@ def init(configuration_file):
     request_queue_handler_url = config.get(REQUEST_HANDLER_SECTION, 'request_queue_handler_url')
     apn_sender_queue_handler_url = config.get(REQUEST_HANDLER_SECTION, 'apn_sender_queue_handler_url')
     gcm_sender_queue_handler_url = config.get(REQUEST_HANDLER_SECTION, 'gcm_sender_queue_handler_url')
+    notification_post_processor_queue_handler_url = config.get(REQUEST_HANDLER_SECTION,
+                                                               'notification_post_processor_queue_handler_url')

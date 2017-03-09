@@ -35,6 +35,7 @@ class Device(Base):
     device_token_new = Column(Text)
     application_version = Column(Integer)
     unregistered_ts = Column(DateTime)
+    last_login_ts = Column(DateTime)
 
     login = relationship('Login')
 
