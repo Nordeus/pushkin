@@ -11,7 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import pytest
 from pushkin.database import database
 import datetime, time
-from pushkin import context
+from pushkin import context, config
 
 from pushkin import test_config_ini_path
 from pushkin.sender.nordifier.gcm_push_sender import GCM2
@@ -128,6 +128,7 @@ def test_canonical(setup_database):
     assert list(database.get_device_tokens(login_id=login.id)) == [(1, new_token)]
 
 def test_device_overflow(setup_database):
+    """Test that max_devices_per_user works"""
     login_id = 12345
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='123', application_version=1007)
     assert list(database.get_device_tokens(login_id=login_id)) == [(1, '123')]
@@ -146,6 +147,61 @@ def test_device_overflow(setup_database):
     database.process_user_login(login_id=login_id, language_id=7, platform_id=1, device_token='129', application_version=1007)
     assert sorted(list(database.get_device_tokens(login_id=login_id))) == [(1, '127'), (1, '128'), (1, '129')]
 
+def test_max_users_per_device_on_login(setup_database):
+    """Test that max_users_per_device works on login"""
+    # add 2 logins per device
+    config.max_users_per_device = 2
+    database.process_user_login(login_id=1, language_id=7, platform_id=1, device_token='d1', application_version=1007)
+    database.process_user_login(login_id=2, language_id=7, platform_id=1, device_token='d1', application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=1))) == [(1, 'd1')]
+    assert sorted(list(database.get_device_tokens(login_id=2))) == [(1, 'd1')]
+
+    # set limit to 1 device
+    config.max_users_per_device = 1
+
+    # make sure adding new user removes old
+    database.process_user_login(login_id=3, language_id=7, platform_id=1, device_token='d1', application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=1))) == []
+    assert sorted(list(database.get_device_tokens(login_id=2))) == []
+    assert sorted(list(database.get_device_tokens(login_id=3))) == [(1, 'd1')]
+
+    # adding new user to a different device does not affect old user
+    database.process_user_login(login_id=1, language_id=7, platform_id=1, device_token='d2', application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=1))) == [(1, 'd2')]
+    assert sorted(list(database.get_device_tokens(login_id=3))) == [(1, 'd1')]
+
+    # adding a new user with different platform does not affect old user
+    database.process_user_login(login_id=4, language_id=7, platform_id=2, device_token='d2', application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=1))) == [(1, 'd2')]
+    assert sorted(list(database.get_device_tokens(login_id=3))) == [(1, 'd1')]
+    assert sorted(list(database.get_device_tokens(login_id=4))) == [(2, 'd2')]
+
+    # logging with same user works
+    database.process_user_login(login_id=1, language_id=7, platform_id=1, device_token='d2', application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=1))) == [(1, 'd2')]
+
+    # check that it works during for device_token_new
+    # old user has new device token
+    database.process_user_login(login_id=10, language_id=7, platform_id=1, device_token='d10', application_version=1007)
+    database.update_canonicals([{'login_id': 10, 'old_token': 'd10', 'new_token': 'd10new'}])
+    database.process_user_login(login_id=11, language_id=7, platform_id=1, device_token='d10new',
+                                application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=10))) == []
+    assert sorted(list(database.get_device_tokens(login_id=11))) == [(1, 'd10new')]
+
+def test_max_users_per_device_on_update_canocicals(setup_database):
+    """Test that max_users_per_device works on update cannonicals"""
+    # set limit to 1 device
+    config.max_users_per_device = 1
+    # updating canonicals causes 2 users to point to same device
+    database.process_user_login(login_id=20, language_id=7, platform_id=1, device_token='d20', application_version=1007)
+    database.process_user_login(login_id=21, language_id=7, platform_id=1, device_token='d20new',
+                                application_version=1007)
+    assert sorted(list(database.get_device_tokens(login_id=20))) == [(1, 'd20')]
+    assert sorted(list(database.get_device_tokens(login_id=21))) == [(1, 'd20new')]
+    database.update_canonicals([{'login_id': 20, 'old_token': 'd20', 'new_token': 'd20new'}])
+    assert sorted(list(database.get_device_tokens(login_id=20))) == []
+    assert sorted(list(database.get_device_tokens(login_id=21))) == [(1, 'd20new')]
 
 def test_ttl(setup_database):
     user_id = 12345

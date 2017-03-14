@@ -25,6 +25,7 @@ from pushkin.request.event_handlers import EventHandlerManager
 from pushkin.requesthandlers.monitoring import RequestQueueHandler
 from pushkin.requesthandlers.monitoring import ApnSenderQueueHandler
 from pushkin.requesthandlers.monitoring import GcmSenderQueueHandler
+from pushkin.requesthandlers.monitoring import NotificationPostProcessorQueue
 import multiprocessing
 
 from pushkin import context
@@ -58,6 +59,7 @@ def create_app():
         (config.request_queue_handler_url, RequestQueueHandler),
         (config.apn_sender_queue_handler_url, ApnSenderQueueHandler),
         (config.gcm_sender_queue_handler_url, GcmSenderQueueHandler),
+        (config.notification_post_processor_queue_handler_url, NotificationPostProcessorQueue),
     ])
     return application
 

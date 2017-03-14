@@ -66,6 +66,9 @@ class NotificationPostProcessor(Thread):
         Thread.__init__(self)
         self.daemon = True
 
+    def queue_size(self):
+        return self.OPERATION_QUEUE.qsize()
+
     def update_canonicals(self, canonical_ids):
         database.update_canonicals(canonical_ids)
 
