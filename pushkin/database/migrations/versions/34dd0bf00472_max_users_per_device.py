@@ -293,40 +293,6 @@ CALLED ON NULL INPUT
 SECURITY INVOKER;
 """
 
-create_keep_max_users_per_device_canonicals = """
-CREATE OR REPLACE FUNCTION "keep_max_users_per_device_canonicals" (
-  p_device_token text,
-  p_max_users_per_device int2
-)
-RETURNS "pg_catalog"."void" AS
-$body$
-BEGIN
-  WITH
-	users_ordered AS (
-	SELECT
-		id,
-		ROW_NUMBER() OVER (PARTITION BY platform_id, COALESCE(device_token_new, device_token)
-		  ORDER BY last_login_ts DESC NULLS LAST, id DESC) AS user_order
-	FROM device
-	WHERE platform_id in (1, 5) -- android only
-	AND p_device_token = COALESCE(device_token_new, device_token)
-	AND unregistered_ts	IS NULL
-	),
-	users_to_delete AS (
-	SELECT *
-	FROM users_ordered
-	WHERE user_order > p_max_users_per_device
-	)
-	DELETE FROM device
-	WHERE id IN (SELECT id FROM users_to_delete);
-END;
-$body$
-LANGUAGE 'plpgsql'
-VOLATILE
-CALLED ON NULL INPUT
-SECURITY INVOKER;
-"""
-
 create_keep_max_users_per_device = """
 CREATE OR REPLACE FUNCTION "keep_max_users_per_device" (
   p_platform_id int2,
@@ -372,7 +338,6 @@ def upgrade():
     op.execute('DROP FUNCTION IF EXISTS "update_user_message_last_time_sent" (hstore[]);')
     op.execute('DROP FUNCTION IF EXISTS "get_and_update_messages_to_send" (hstore[]);')
 
-    op.execute(create_keep_max_users_per_device_canonicals)
     op.execute(create_keep_max_users_per_device)
 
 def downgrade():
@@ -384,5 +349,4 @@ def downgrade():
     op.execute(create_update_user_message_last_time_sent)
     op.execute(create_get_and_update_messages_to_send)
 
-    op.execute('DROP FUNCTION IF EXISTS "keep_max_users_per_device_canonicals" (text, int2);')
     op.execute('DROP FUNCTION IF EXISTS "keep_max_users_per_device" (int2, text, int2);')

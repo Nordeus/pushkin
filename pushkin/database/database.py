@@ -183,13 +183,19 @@ def update_canonicals(canonicals):
     ENGINE.execute(stmt, binding)
 
     with session_scope() as session:
+        query = text('SELECT keep_max_users_per_device( \
+                     (:platform_id)::int2, :device_token, (:max_users_per_device)::int2)')
         for canonical in canonicals:
-            session.execute(text('SELECT keep_max_users_per_device_canonicals( \
-                             :device_token, (:max_users_per_device)::int2)'),
-                    {
-                    'device_token': canonical['new_token'],
-                    'max_users_per_device': config.max_users_per_device
-                    })
+            session.execute(query,
+                            {'platform_id': constants.PLATFORM_ANDROID,
+                             'device_token': canonical['new_token'],
+                             'max_users_per_device': config.max_users_per_device
+                            })
+            session.execute(query,
+                            {'platform_id': constants.PLATFORM_ANDROID_TABLET,
+                             'device_token': canonical['new_token'],
+                             'max_users_per_device': config.max_users_per_device
+                            })
         session.commit()
 
 def update_unregistered_devices(unregistered):

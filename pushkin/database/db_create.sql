@@ -104,38 +104,6 @@ ALTER TABLE "user_message_last_time_sent" ADD CONSTRAINT "ref_message_id_to_mess
 	ON UPDATE NO ACTION
 	NOT DEFERRABLE;
 
-CREATE OR REPLACE FUNCTION "keep_max_users_per_device_canonicals" (
-  p_device_token text,
-  p_max_users_per_device int2
-)
-RETURNS "pg_catalog"."void" AS
-$body$
-BEGIN
-  WITH
-	users_ordered AS (
-	SELECT
-		id,
-		ROW_NUMBER() OVER (PARTITION BY platform_id, COALESCE(device_token_new, device_token)
-		  ORDER BY last_login_ts DESC NULLS LAST, id DESC) AS user_order
-	FROM device
-	WHERE platform_id in (1, 5) -- android only
-	AND p_device_token = COALESCE(device_token_new, device_token)
-	AND unregistered_ts	IS NULL
-	),
-	users_to_delete AS (
-	SELECT *
-	FROM users_ordered
-	WHERE user_order > p_max_users_per_device
-	)
-	DELETE FROM device
-	WHERE id IN (SELECT id FROM users_to_delete);
-END;
-$body$
-LANGUAGE 'plpgsql'
-VOLATILE
-CALLED ON NULL INPUT
-SECURITY INVOKER;
-
 CREATE OR REPLACE FUNCTION "keep_max_users_per_device" (
   p_platform_id int2,
   p_device_token text,
