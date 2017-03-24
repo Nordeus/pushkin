@@ -18,29 +18,51 @@ class RequestQueueHandler(tornado.web.RequestHandler):
     """Responds with number of items in RequestProcessor."""
 
     def get(self):
-        queue_size = context.request_processor.queue_size()
-        self.write(str(queue_size))
+        try:
+            queue_size = context.request_processor.queue_size()
+            self.write(str(queue_size))
+        except:
+            context.main_logger.exception(
+                "Could not get queue size for request processor!")
+            raise tornado.web.HTTPError(400)
 
 
 class ApnSenderQueueHandler(tornado.web.RequestHandler):
     """Responds with number of items in ApnSenderProcessor."""
 
     def get(self):
-        queue_size = context.request_processor.sender_manager.apn_sender_processor.queue_size()
-        self.write(str(queue_size))
+        try:
+            sender_name = 'pushkin.sender.senders.ApnNotificationSender'
+            queue_size = context.request_processor.sender_manager.sender_by_name[sender_name].queue_size()
+            self.write(str(queue_size))
+        except:
+            context.main_logger.exception(
+                "Could not get queue size for sender {}!".format(sender_name))
+            raise tornado.web.HTTPError(400)
 
 
 class GcmSenderQueueHandler(tornado.web.RequestHandler):
     """Responds with number of items in GcmSenderProcessor."""
 
     def get(self):
-        queue_size = context.request_processor.sender_manager.gcm_sender_processor.queue_size()
-        self.write(str(queue_size))
+        try:
+            sender_name = 'pushkin.sender.senders.GcmNotificationSender'
+            queue_size = context.request_processor.sender_manager.sender_by_name[sender_name].queue_size()
+            self.write(str(queue_size))
+        except:
+            context.main_logger.exception(
+                "Could not get queue size for sender {}!".format(sender_name))
+            raise tornado.web.HTTPError(400)
 
 
 class NotificationPostProcessorQueue(tornado.web.RequestHandler):
     """Responds with number of items in NotificationPostProcessor."""
 
     def get(self):
-        queue_size = context.request_processor.sender_manager.notification_post_processor.queue_size()
-        self.write(str(queue_size))
+        try:
+            queue_size = context.request_processor.sender_manager.notification_post_processor.queue_size()
+            self.write(str(queue_size))
+        except:
+            context.main_logger.exception(
+                "Could not get queue size for notification post processor!")
+            raise tornado.web.HTTPError(400)
