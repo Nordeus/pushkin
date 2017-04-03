@@ -59,7 +59,8 @@ class LoginEventHandler(EventHandler):
         EventHandler.__init__(self, config.login_event_id)
 
     def handle_event(self, event, event_params):
-        database.process_user_login(login_id=event.user_id, language_id=event_params.get('languageId'),
+        database.process_user_login(login_id=event.user_id,
+                                    language_id=37 if event_params.get('countryCode') in ('CN', 'TW') else 1,
                                     platform_id=event_params['platformId'],
                                     device_token=event_params.get('deviceToken'),
                                     application_version=event_params['applicationVersion'])
