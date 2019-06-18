@@ -1,0 +1,176 @@
+@font-face {
+	font-family: "Nordeus";
+	src: url("fonts/nordeus-light.eot");
+	src: url("fonts/nordeus-light.eot?#iefix") format("embedded-opentype"), url("fonts/nordeus-light.woff") format("woff"), url("fonts/nordeus-light.ttf") format("truetype"), url("fonts/nordeus-light.svg") format("svg");
+	font-weight: 300;
+	font-style: normal;
+}
+@font-face {
+	font-family: "Nordeus";
+	src: url("fonts/nordeus-regular.eot");
+	src: url("fonts/nordeus-regular.eot?#iefix") format("embedded-opentype"), url("fonts/nordeus-regular.woff") format("woff"), url("fonts/nordeus-regular.ttf") format("truetype"), url("fonts/nordeus-regular.svg") format("svg");
+	font-weight: 500;
+	font-style: normal;
+}
+@font-face {
+	font-family: "Nordeus";
+	src: url("fonts/nordeus-medium.eot");
+	src: url("fonts/nordeus-medium.eot?#iefix") format("embedded-opentype"), url("fonts/nordeus-medium.woff") format("woff"), url("fonts/nordeus-medium.ttf") format("truetype"), url("fonts/nordeus-medium.svg") format("svg");
+	font-weight: 600;
+	font-style: normal;
+}
+@font-face {
+	font-family: "Nordeus";
+	src: url("fonts/nordeus-bold.eot");
+	src: url("fonts/nordeus-bold.eot?#iefix") format("embedded-opentype"), url("fonts/nordeus-bold.woff") format("woff"), url("fonts/nordeus-bold.ttf") format("truetype"), url("fonts/nordeus-bold.svg") format("svg");
+	font-weight: 700;
+	font-style: normal;
+}
+@font-face {
+	font-family: "Nordeus";
+	src: url("fonts/nordeus-black.eot");
+	src: url("fonts/nordeus-black.eot?#iefix") format("embedded-opentype"), url("fonts/nordeus-black.woff") format("woff"), url("fonts/nordeus-black.ttf") format("truetype"), url("fonts/nordeus-black.svg") format("svg");
+	font-weight: 900;
+	font-style: normal;
+}
+
+body {
+	background: url('img/background.jpg') center 0 no-repeat #fff;
+	color: #424645;
+	font-family: "Nordeus", Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+#content {
+	width: 748px;
+	margin: auto;
+	text-align: center;
+}
+
+#title {
+	border: 7px solid #ffffff;
+	border-radius: 3px;
+	padding: 10px 20px 10px 10px;
+	margin: 50px auto 50px;
+	font-weight: bold;
+	text-transform: uppercase;
+	width: 500px;
+}
+
+#tabs {
+	height: 50px;
+	font-size: 19px;
+	font-weight: 600;
+}
+
+#tabs > a {
+	display: inline-block;
+	float: left;
+	height: 50px;
+	line-height: 50px;
+	color: #424645;
+	text-decoration: none;
+	outline: none;
+}
+
+#tabs > a:hover {
+	background-color: rgba(66,70,69, 0.9);
+	color: #ffffff;
+}
+
+#tabs > a.active {
+	background-color: #424645;
+	color: #ffffff;
+}
+
+#tabs > a.external > .text:after {
+	content: "";
+	display: inline-block;
+	margin: 0 0 0 3px;
+	width: 14px;
+	height: 14px;
+	background: url('img/arrow-normal.svg') no-repeat left;
+}
+
+#tabs > a.external:hover > .text:after {
+	background: url('img/arrow-hover.svg') no-repeat left;
+}
+
+#tabs > a > .divider {
+	background: #ffffff;
+	float: left;
+	width: 3px;
+	height: 34px;
+	margin: 8px 0;
+}
+
+#tabs > a > .text {
+	float: left;
+	padding: 0 34px;
+}
+
+#tabs > a:hover > .divider,
+#tabs > a.active > .divider,
+#tabs > a:hover + a > .divider,
+#tabs > a.active + a > .divider {
+	background: transparent;
+}
+
+.content {
+	text-align: left;
+	padding: 50px 15px;
+	height: 475px;
+	font-size: 16px;
+}
+
+.content a {
+	color: #424645;
+	font-weight: bold;
+	text-decoration: none;
+	outline: none;
+}
+
+.content a:hover {
+	text-decoration: underline;
+}
+
+#social {
+	margin: 40px auto 30px;
+}
+
+#social > a {
+	display: inline-block;
+	width: 40px;
+	height: 42px;
+	outline: none;
+}
+#social > a:hover { background-position: 0 -42px; }
+#facebook { background-image: url('img/facebook2.png'); }
+#twitter { background-image: url('img/twitter2.png'); }
+#youtube { background-image: url('img/youtube2.png'); }
+#instagram { background-image: url('img/instagram2.png'); }
+
+#footer {
+	color: #ffffff;
+	font-size: 23px;
+}
+
+#footer > span {
+	padding: 0 7px;
+}
+
+#footer > a {
+	text-transform: uppercase;
+	color: #ffffff;
+	font-weight: 800;
+	height: 38px;
+	width: 150px;
+	display: inline-block;
+	vertical-align: middle;
+	margin: -4px 0 0;
+	outline: none;
+}
+
+.hidden {
+	display: none;
+}
