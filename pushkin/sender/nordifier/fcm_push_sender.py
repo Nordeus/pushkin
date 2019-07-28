@@ -11,7 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import time
 from sender import Sender
 import constants as const
-from fcm import FCM, generate_token
+from fcm import FCM, generate_fcm_app
 from firebase_admin import messaging
 
 
@@ -23,9 +23,9 @@ class FCMPushSender(Sender):
 
     def __init__(self, config, log):
         Sender.__init__(self, config, log)
-        self.access_key = generate_token(config.get('Messenger', 'google_application_credentials'))
         self.base_deeplink_url = config.get('Messenger', 'base_deeplink_url')
-        self.FCM = FCM(self.access_key)
+        app = generate_fcm_app(config.get('Messenger', 'google_application_credentials'))
+        self.FCM = FCM(app)
         self.canonical_ids = []
         self.unregistered_devices = []
 
@@ -65,8 +65,9 @@ class FCMPushSender(Sender):
         return msg
 
     def send(self, notification):
+        dry_run = 'dry_run' in notification and notification['dry_run'] == True
         message = self.create_message(notification)
-        response = messaging.send(message)
+        response = messaging.send(message, dry_run)
 
         return response
 
