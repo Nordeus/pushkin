@@ -15,38 +15,12 @@ from firebase_admin import credentials, messaging
 FCM_URL = 'https://fcm.googleapis.com/fcm/send'
 
 
-class FCMException(Exception): pass
+class FCMException(Exception):
+    pass
 
 
-class FCMConnectionException(FCMException): pass
-
-
-class FCMAuthenticationException(FCMException): pass
-
-
-class FCMTooManyRegIdsException(FCMException): pass
-
-
-class FCMInvalidTtlException(FCMException): pass
-
-
-# Exceptions from Google responses
-class FCMMissingRegistrationException(FCMException): pass
-
-
-class FCMMismatchSenderIdException(FCMException): pass
-
-
-class FCMNotRegisteredException(FCMException): pass
-
-
-class FCMMessageTooBigException(FCMException): pass
-
-
-class FCMInvalidMessageException(FCMException): pass
-
-
-class FCMUnavailableException(FCMException): pass
+class FCMInvalidMessageException(FCMException):
+    pass
 
 
 def generate_fcm_app(service_account_file):
