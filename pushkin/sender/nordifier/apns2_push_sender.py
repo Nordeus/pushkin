@@ -39,7 +39,7 @@ class APNS2PushSender(Sender):
         self.unregistered_devices = []
         return items
 
-    def prepare_data(self, notification):
+    def create_message(self, notification):
         def to_timestamp(dt, epoch=datetime(1970, 1, 1)):
             # http://stackoverflow.com/questions/8777753/converting-datetime-date-to-utc-timestamp-in-python
             td = dt - epoch
@@ -66,28 +66,30 @@ class APNS2PushSender(Sender):
             'identifier': notification['sending_id'],
             'expiry': expiry_utc_ts_seconds,
             'priority': 10,
+            'payload': Payload(alert=notification['content'], badge=1, sound='default', custom=custom)
         }
-        result['payload'] = Payload(alert=notification['content'], badge=1, sound='default', custom=custom)
 
         return result
 
-
     def send(self, notification):
-        data = self.prepare_data(notification)
+        data = self.create_message(notification)
 
         if data is not None:
             for i in xrange(self.connection_error_retries):
                 try:
-                    self.apn.send_notification(data['token'], data['payload'], expiration=data['expiry'], topic=self.topic)
+                    self.apn.send_notification(data['token'],
+                                               data['payload'],
+                                               expiration=data['expiry'],
+                                               topic=self.topic)
                     notification['status'] = const.NOTIFICATION_SUCCESS
-                    break #We did it, time to break free!
+                    break  # We did it, time to break free!
                 except APNsException as e:
                     if isinstance(e, Unregistered):
                         notification['status'] = const.NOTIFICATION_APNS_DEVICE_UNREGISTERED
                         unregistered_data = {
-                                        'login_id': notification['login_id'],
-                                        'device_token': notification['receiver_id'],
-                                    }
+                            'login_id': notification['login_id'],
+                            'device_token': notification['receiver_id'],
+                        }
                         self.unregistered_devices.append(unregistered_data)
                     else:
                         self.log.warning('APN got exception {}'.format(type(e).__name__))
@@ -95,4 +97,3 @@ class APNS2PushSender(Sender):
     def send_batch(self):
         while len(self.queue):
             self.send(self.queue.pop())
-    
