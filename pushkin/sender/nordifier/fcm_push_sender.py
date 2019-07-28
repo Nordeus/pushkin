@@ -67,7 +67,7 @@ class FCMPushSender(Sender):
     def send(self, notification):
         dry_run = 'dry_run' in notification and notification['dry_run'] == True
         message = self.create_message(notification)
-        response = messaging.send(message, dry_run)
+        response = self.FCM.send(message, dry_run)
 
         return response
 
@@ -75,4 +75,4 @@ class FCMPushSender(Sender):
         messages = []
         while len(self.queue):
             messages.append(self.create_message(self.queue.pop()))
-        messaging.send_all(messages)
+        return self.FCM.send_batch(messages)

@@ -23,6 +23,10 @@ class FCMInvalidMessageException(FCMException):
     pass
 
 
+class FCMTooManyRegIdsException(FCMException):
+    pass
+
+
 def generate_fcm_app(service_account_file):
     cred = credentials.Certificate(service_account_file)
     default_app = firebase_admin.initialize_app(cred)
