@@ -13,7 +13,6 @@ from sender import Sender
 import constants as const
 from fcm import FCM, generate_token
 from firebase_admin import messaging
-import os
 
 
 class FCMPushSender(Sender):
@@ -24,7 +23,7 @@ class FCMPushSender(Sender):
 
     def __init__(self, config, log):
         Sender.__init__(self, config, log)
-        self.access_key = generate_token(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+        self.access_key = generate_token(config.get('Messenger', 'google_application_credentials'))
         self.base_deeplink_url = config.get('Messenger', 'base_deeplink_url')
         self.FCM = FCM(self.access_key)
         self.canonical_ids = []
