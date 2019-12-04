@@ -1,3 +1,5 @@
+# Unmaintained
+This repository is no longer maintained.
 
 # Pushkin
 [![Build Status](https://travis-ci.org/Nordeus/pushkin.svg?branch=master)](https://travis-ci.org/Nordeus/pushkin)
@@ -24,7 +26,3 @@ To fit all use cases, Pushkin has 2 modes of operations:
 These two use cases can be seen on the diagram below:
 
 ![highlevel](docs/img/Pushkin_Highlevel.png)
-
----
-
-Read the documentation at [pushkin.io](http://docs.pushkin.io).
