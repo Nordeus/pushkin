@@ -55,11 +55,9 @@ class APNsPushSender(Sender):
             notif = self.sent_queue[id]
             notif['status'] = const.NOTIFICATION_CONNECTION_ERROR
 
-    def prepare_data(self, notification):
+    def create_message(self, notification):
         def totimestamp(dt, epoch=datetime(1970, 1, 1)):
-            # http://stackoverflow.com/questions/8777753/converting-datetime-date-to-utc-timestamp-in-python
             td = dt - epoch
-            # return td.total_seconds() # Python 2.7
             return (td.microseconds + (td.seconds + td.days * 86400) * 10 ** 6) / 10 ** 6
 
         expiry_seconds = (notification['time_to_live_ts_bigint'] - int(round(time.time() * 1000))) / 1000
@@ -82,8 +80,8 @@ class APNsPushSender(Sender):
             'identifier': notification['sending_id'],
             'expiry': expiry_utc_ts_seconds,
             'priority': 10,
+            'payload': Payload(alert=notification['content'], badge=1, sound='default', custom=custom)
         }
-        result['payload'] = Payload(alert=notification['content'], badge=1, sound='default', custom=custom)
 
         return result
 
@@ -91,7 +89,7 @@ class APNsPushSender(Sender):
         notification['status'] = const.NOTIFICATION_SUCCESS
         self.sent_queue[notification['sending_id']] = notification
 
-        data = self.prepare_data(notification)
+        data = self.create_message(notification)
         if data:
             self.apns.gateway_server.send_notification(
                 token_hex=data['token'],
@@ -110,7 +108,7 @@ class APNsPushSender(Sender):
                 notification['status'] = const.NOTIFICATION_SUCCESS
                 self.sent_queue[notification['sending_id']] = notification
 
-                data = self.prepare_data(notification)
+                data = self.create_message(notification)
                 if data:
                     frame.add_item(
                         token_hex=data['token'],
@@ -122,4 +120,3 @@ class APNsPushSender(Sender):
 
             # batch (frame) prepared, send it
             self.apns.gateway_server.send_notification_multiple(frame)
-

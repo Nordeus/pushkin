@@ -8,16 +8,14 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
-from Queue import Empty
 from threading import Thread
-import time
 import logging
 import multiprocessing
 
 from pushkin.database import database
-from pushkin.sender.nordifier.apns_push_sender import APNsPushSender
 from pushkin.sender.nordifier.gcm_push_sender import GCMPushSender
 from pushkin.sender.nordifier.apns2_push_sender import APNS2PushSender
+from pushkin.sender.nordifier.fcm_push_sender import FCMPushSender
 from pushkin.util.pool import ProcessPool
 from pushkin import config, context
 from pushkin.sender.nordifier import constants
@@ -25,7 +23,6 @@ import timeit
 
 
 class NotificationSender(ProcessPool):
-
     NUM_WORKERS_DEFAULT = 50
 
     def __init__(self, **kwargs):
@@ -51,11 +48,14 @@ class NotificationSender(ProcessPool):
             except:
                 main_logger.exception("Error while logging notification to csv log!")
 
+
 class NotificationOperation():
-    '''Represents operation which should be executed outside of process pool'''
+    """Represents operation which should be executed outside of process pool"""
+
     def __init__(self, operation, data):
         self.operation = operation
         self.data = data
+
 
 class NotificationPostProcessor(Thread):
     UPDATE_CANONICALS = 1
@@ -84,10 +84,12 @@ class NotificationPostProcessor(Thread):
                 elif record.operation == NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES:
                     self.update_unregistered_devices(record.data)
                 else:
-                    context.main_logger.error("NotificationPostProcessor - unknown operation: {operation}".format(operation=record.operation))
+                    context.main_logger.error(
+                        "NotificationPostProcessor - unknown operation: {operation}".format(operation=record.operation))
             except:
                 context.main_logger.exception("Exception while post processing notification.")
                 pass
+
 
 class NotificationStatistics:
     def __init__(self, name, logger, last_averages=100, log_time_seconds=30):
@@ -108,13 +110,12 @@ class NotificationStatistics:
         self.running_average += elapsed / self.last_averages
         elapsed_since_log = timeit.default_timer() - self.last_time_logged
         if elapsed_since_log > self.log_time_seconds:
-            self.logger.info('Average time for sending push for {name} is {avg}'.format(name=self.name, avg=self.running_average))
+            self.logger.info(
+                'Average time for sending push for {name} is {avg}'.format(name=self.name, avg=self.running_average))
             self.last_time_logged = timeit.default_timer()
 
 
-
 class ApnNotificationSender(NotificationSender):
-
     PLATFORMS = (constants.PLATFORM_IPHONE,
                  constants.PLATFORM_IPAD)
 
@@ -129,7 +130,9 @@ class ApnNotificationSender(NotificationSender):
                 statistics.stop()
                 unregistered_devices = sender.pop_unregistered_devices()
                 if len(unregistered_devices) > 0:
-                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
+                    NotificationPostProcessor.OPERATION_QUEUE.put(
+                        NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES,
+                                              unregistered_devices))
             except Exception:
                 context.main_logger.exception("ApnNotificationProcessor failed to send notifications")
             finally:
@@ -137,7 +140,6 @@ class ApnNotificationSender(NotificationSender):
 
 
 class GcmNotificationSender(NotificationSender):
-
     PLATFORMS = (constants.PLATFORM_ANDROID,
                  constants.PLATFORM_ANDROID_TABLET)
 
@@ -152,10 +154,43 @@ class GcmNotificationSender(NotificationSender):
                 statistics.stop()
                 canonical_ids = sender.pop_canonical_ids()
                 if len(canonical_ids) > 0:
-                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
+                    NotificationPostProcessor.OPERATION_QUEUE.put(
+                        NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
                 unregistered_devices = sender.pop_unregistered_devices()
                 if len(unregistered_devices) > 0:
-                    NotificationPostProcessor.OPERATION_QUEUE.put(NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES, unregistered_devices))
+                    NotificationPostProcessor.OPERATION_QUEUE.put(
+                        NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES,
+                                              unregistered_devices))
+            except Exception:
+                context.main_logger.exception("GcmNotificationProcessor failed to send notifications")
+            finally:
+                self.log_notifications([notification])
+
+
+class FcmNotificationSender(NotificationSender):
+    PLATFORMS = (constants.PLATFORM_ANDROID,
+                 constants.PLATFORM_ANDROID_TABLET,
+                 constants.PLATFORM_IPAD,
+                 constants.PLATFORM_IPHONE)
+
+    def process(self):
+        sender = FCMPushSender(config.config, context.main_logger)
+        statistics = NotificationStatistics('FCM', context.main_logger)
+        while True:
+            notification = self.task_queue.get()
+            try:
+                statistics.start()
+                sender.send_in_batch(notification)
+                statistics.stop()
+                canonical_ids = sender.pop_canonical_ids()
+                if len(canonical_ids) > 0:
+                    NotificationPostProcessor.OPERATION_QUEUE.put(
+                        NotificationOperation(NotificationPostProcessor.UPDATE_CANONICALS, canonical_ids))
+                unregistered_devices = sender.pop_unregistered_devices()
+                if len(unregistered_devices) > 0:
+                    NotificationPostProcessor.OPERATION_QUEUE.put(
+                        NotificationOperation(NotificationPostProcessor.UPDATE_UNREGISTERED_DEVICES,
+                                              unregistered_devices))
             except Exception:
                 context.main_logger.exception("GcmNotificationProcessor failed to send notifications")
             finally:
